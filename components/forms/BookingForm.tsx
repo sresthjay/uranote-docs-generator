@@ -113,7 +113,10 @@ export default function BookingForm({
   const [showFirmResults, setShowFirmResults] =
     useState(false);
 
-  const [saved, setSaved] = useState(false);
+  const [savedSection, setSavedSection] =
+    useState<
+      "receipt" | "voucher" | "payment" | null
+    >(null);
 
   const [exporting, setExporting] = useState<
     "receipt" | "voucher" | "payment" | null
@@ -126,19 +129,19 @@ export default function BookingForm({
    */
 
   useEffect(() => {
-  if (!initialBooking) {
-    return;
-  }
+    if (!initialBooking) {
+      return;
+    }
 
-  setBooking(initialBooking);
+    setBooking(initialBooking);
 
-  const firm = firmMaster.find(
-    (item) =>
-      item.id === initialBooking.firmId
-  );
+    const firm = firmMaster.find(
+      (item) =>
+        item.id === initialBooking.firmId
+    );
 
-  setFirmSearch(firm?.name || "");
-}, [initialBooking]);
+    setFirmSearch(firm?.name || "");
+  }, [initialBooking]);
 
   /*
    * ---------------------------------------------------------
@@ -223,13 +226,32 @@ export default function BookingForm({
     onChange?.(bookingToSave);
     onSaved?.(bookingToSave);
 
-    setSaved(true);
+    return bookingToSave;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * SAVE BUTTON HANDLER
+   * ---------------------------------------------------------
+   */
+
+  function handleSave(
+    section:
+      | "receipt"
+      | "voucher"
+      | "payment"
+  ) {
+    const result = saveBooking();
+
+    if (!result) {
+      return;
+    }
+
+    setSavedSection(section);
 
     setTimeout(() => {
-      setSaved(false);
+      setSavedSection(null);
     }, 2000);
-
-    return bookingToSave;
   }
 
   /*
@@ -242,7 +264,8 @@ export default function BookingForm({
     currentBooking: Booking
   ) {
     return firmMaster.find(
-      (firm) => firm.id === currentBooking.firmId
+      (firm) =>
+        firm.id === currentBooking.firmId
     );
   }
 
@@ -333,7 +356,8 @@ export default function BookingForm({
         totalAmount:
           savedBooking.services.reduce(
             (total, service) =>
-              total + Number(service.amount || 0),
+              total +
+              Number(service.amount || 0),
             0
           ),
 
@@ -373,10 +397,14 @@ export default function BookingForm({
                 service.description || "N/A",
 
               quantity:
-                Number(service.quantity || 0),
+                Number(
+                  service.quantity || 0
+                ),
 
               amount:
-                Number(service.amount || 0),
+                Number(
+                  service.amount || 0
+                ),
             })
           ),
       };
@@ -445,7 +473,8 @@ export default function BookingForm({
         totalAmount:
           savedBooking.services.reduce(
             (total, service) =>
-              total + Number(service.amount || 0),
+              total +
+              Number(service.amount || 0),
             0
           ),
 
@@ -520,7 +549,8 @@ export default function BookingForm({
       const totalAmount =
         savedBooking.services.reduce(
           (total, service) =>
-            total + Number(service.amount || 0),
+            total +
+            Number(service.amount || 0),
           0
         );
 
@@ -741,13 +771,16 @@ export default function BookingForm({
   const bookingValue =
     booking.services.reduce(
       (total, service) =>
-        total + Number(service.amount || 0),
+        total +
+        Number(service.amount || 0),
       0
     );
 
   const balanceDue = Math.max(
     bookingValue -
-    Number(booking.amountReceived || 0),
+    Number(
+      booking.amountReceived || 0
+    ),
     0
   );
 
@@ -1133,7 +1166,7 @@ export default function BookingForm({
                   e.target.value
                 )
               }
-              placeholder="22"
+              placeholder="10"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
 
@@ -1371,8 +1404,9 @@ export default function BookingForm({
                     type="number"
                     min="0"
                     value={
-                      getService("taxi")
-                        .quantity
+                      getService("taxi").quantity === 0
+                        ? ""
+                        : getService("taxi").quantity
                     }
                     onChange={(e) =>
                       updateService(
@@ -1381,6 +1415,15 @@ export default function BookingForm({
                         e.target.value
                       )
                     }
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        updateService(
+                          "taxi",
+                          "quantity",
+                          "0"
+                        );
+                      }
+                    }}
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1444,8 +1487,9 @@ export default function BookingForm({
                     type="number"
                     min="0"
                     value={
-                      getService("hotel")
-                        .quantity
+                      getService("hotel").quantity === 0
+                        ? ""
+                        : getService("hotel").quantity
                     }
                     onChange={(e) =>
                       updateService(
@@ -1454,6 +1498,15 @@ export default function BookingForm({
                         e.target.value
                       )
                     }
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        updateService(
+                          "hotel",
+                          "quantity",
+                          "0"
+                        );
+                      }
+                    }}
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1517,8 +1570,9 @@ export default function BookingForm({
                     type="number"
                     min="0"
                     value={
-                      getService("flight")
-                        .quantity
+                      getService("flight").quantity === 0
+                        ? ""
+                        : getService("flight").quantity
                     }
                     onChange={(e) =>
                       updateService(
@@ -1527,6 +1581,15 @@ export default function BookingForm({
                         e.target.value
                       )
                     }
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        updateService(
+                          "flight",
+                          "quantity",
+                          "0"
+                        );
+                      }
+                    }}
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1591,9 +1654,9 @@ export default function BookingForm({
                     type="number"
                     min="0"
                     value={
-                      getService(
-                        "miscellaneous"
-                      ).quantity
+                      getService("miscellaneous").quantity === 0
+                        ? ""
+                        : getService("miscellaneous").quantity
                     }
                     onChange={(e) =>
                       updateService(
@@ -1739,36 +1802,48 @@ export default function BookingForm({
 
           {/* Receipt Actions */}
 
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
+          <div className="mt-6 border-t border-gray-200 pt-5">
 
-            <button
-              type="button"
-              onClick={onReceipt}
-              className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              Preview Receipt
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-3">
 
-            <button
-              type="button"
-              onClick={handleExportReceipt}
-              disabled={
-                exporting !== null
-              }
-              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {exporting === "receipt"
-                ? "Exporting..."
-                : "Export Receipt"}
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleSave("receipt")
+                }
+                className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
+              >
+                Save
+              </button>
 
-            <button
-              type="button"
-              onClick={saveBooking}
-              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
-            >
-              Save Booking
-            </button>
+              <button
+                type="button"
+                onClick={onReceipt}
+                className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                Preview
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportReceipt}
+                disabled={
+                  exporting !== null
+                }
+                className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {exporting === "receipt"
+                  ? "Exporting..."
+                  : "PDF"}
+              </button>
+
+            </div>
+
+            {savedSection === "receipt" && (
+              <div className="mt-2 text-right text-sm text-green-600">
+                Receipt Saved
+              </div>
+            )}
 
           </div>
 
@@ -2156,38 +2231,50 @@ export default function BookingForm({
 
         {/* Voucher Actions */}
 
-        <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
+        <div className="mt-6 border-t border-gray-200 pt-5">
 
-          <button
-            type="button"
-            onClick={onVoucher}
-            className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Preview Voucher
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
 
-          <button
-            type="button"
-            onClick={
-              handleExportVoucher
-            }
-            disabled={
-              exporting !== null
-            }
-            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {exporting === "voucher"
-              ? "Exporting..."
-              : "Export Voucher"}
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleSave("voucher")
+              }
+              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
+            >
+              Save
+            </button>
 
-          <button
-            type="button"
-            onClick={saveBooking}
-            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
-          >
-            Save Booking
-          </button>
+            <button
+              type="button"
+              onClick={onVoucher}
+              className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Preview
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                handleExportVoucher
+              }
+              disabled={
+                exporting !== null
+              }
+              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === "voucher"
+                ? "Exporting..."
+                : "PDF"}
+            </button>
+
+          </div>
+
+          {savedSection === "voucher" && (
+            <div className="mt-2 text-right text-sm text-green-600">
+              Voucher Saved
+            </div>
+          )}
 
         </div>
 
@@ -2275,7 +2362,7 @@ export default function BookingForm({
                               e.target.value
                             )
                           }
-                          placeholder="Taxi advance - Day 1"
+                          placeholder="Day 1"
                           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                         />
 
@@ -2400,7 +2487,7 @@ export default function BookingForm({
                               e.target.value
                             )
                           }
-                          placeholder="Hotel advance - Shimla"
+                          placeholder="Hotel Traveller Inn, Shimla"
                           className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                         />
 
@@ -2584,54 +2671,56 @@ export default function BookingForm({
 
         {/* Payment Schedule Actions */}
 
-        <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
+        <div className="mt-6 border-t border-gray-200 pt-5">
 
-          <button
-            type="button"
-            onClick={
-              onPaymentSchedule
-            }
-            className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Preview Payment Schedule
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
 
-          <button
-            type="button"
-            onClick={
-              handleExportPaymentSchedule
-            }
-            disabled={
-              exporting !== null
-            }
-            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {exporting === "payment"
-              ? "Exporting..."
-              : "Export Payment Schedule"}
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleSave("payment")
+              }
+              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
+            >
+              Save
+            </button>
 
-          <button
-            type="button"
-            onClick={saveBooking}
-            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
-          >
-            Save Booking
-          </button>
+            <button
+              type="button"
+              onClick={
+                onPaymentSchedule
+              }
+              className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Preview
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                handleExportPaymentSchedule
+              }
+              disabled={
+                exporting !== null
+              }
+              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === "payment"
+                ? "Exporting..."
+                : "PDF"}
+            </button>
+
+          </div>
+
+          {savedSection === "payment" && (
+            <div className="mt-2 text-right text-sm text-green-600">
+              Schedule Saved
+            </div>
+          )}
 
         </div>
 
       </section>
-
-      {/* =====================================================
-          SAVE STATUS
-      ====================================================== */}
-
-      {saved && (
-        <div className="text-right text-sm text-green-600">
-          Booking saved
-        </div>
-      )}
 
     </div>
   );

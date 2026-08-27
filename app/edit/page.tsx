@@ -53,35 +53,56 @@ export default function EditBookingPage() {
     setPreviewType("schedule");
   }
 
- useEffect(() => {
-   try {
-     const params = new URLSearchParams(
-       window.location.search
-     );
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(
+        window.location.search
+      );
 
-     const bookingId =
-       params.get("id") || params.get("bookingId");
+      const bookingId =
+        params.get("id") || params.get("bookingId");
 
-     if (!bookingId) {
-       setLoading(false);
-       return;
-     }
+      if (!bookingId) {
+        setLoading(false);
+        return;
+      }
 
-     const savedBooking =
-       getBooking(bookingId);
+      const savedBooking =
+        getBooking(bookingId);
 
-     if (savedBooking) {
-       setBooking(savedBooking);
-     }
-   } catch (error) {
-     console.error(
-       "Failed to load booking:",
-       error
-     );
-   } finally {
-     setLoading(false);
-   }
- }, []);
+      if (savedBooking) {
+        setBooking(savedBooking);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load booking:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const [showToTop, setShowToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowToTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  function scrollToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
 
   /* =====================================================
      NO BOOKING
@@ -328,6 +349,17 @@ export default function EditBookingPage() {
         )}
 
       </div>
+
+      {showToTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          className="fixed bottom-6 right-6 z-50 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-md transition hover:bg-gray-50"
+        >
+          ↑
+        </button>
+      )}
 
     </main>
   );
