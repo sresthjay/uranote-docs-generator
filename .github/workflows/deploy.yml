@@ -1,4 +1,4 @@
-name: Deploy Itinerary Builder
+name: Deploy Docs Generator
 
 on:
   push:
