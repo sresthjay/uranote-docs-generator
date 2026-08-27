@@ -10,6 +10,18 @@ import {
   formatBookingNumber,
 } from "@/lib/booking-number";
 
+import {
+  generateReceiptPdf,
+} from "@/lib/pdf/receipt-pdf";
+
+import {
+  exportVoucherPdf,
+} from "@/lib/pdf/voucher-pdf";
+
+import {
+  generatePaymentSchedulePdf,
+} from "@/lib/pdf/payment-schedule-pdf";
+
 interface BookingFormProps {
   initialBooking?: Booking;
 
@@ -89,20 +101,23 @@ export default function BookingForm({
     initialBooking || createInitialBooking()
   );
 
-  const [firmSearch, setFirmSearch] =
-    useState(
-      initialBooking
-        ? firmMaster.find(
-          (firm) =>
-            firm.id === initialBooking.firmId
-        )?.name || ""
-        : defaultFirm?.name || ""
-    );
+  const [firmSearch, setFirmSearch] = useState(
+    initialBooking
+      ? firmMaster.find(
+        (firm) =>
+          firm.id === initialBooking.firmId
+      )?.name || ""
+      : defaultFirm?.name || ""
+  );
 
   const [showFirmResults, setShowFirmResults] =
     useState(false);
 
   const [saved, setSaved] = useState(false);
+
+  const [exporting, setExporting] = useState<
+    "receipt" | "voucher" | "payment" | null
+  >(null);
 
   /*
    * ---------------------------------------------------------
@@ -111,37 +126,29 @@ export default function BookingForm({
    */
 
   useEffect(() => {
-    if (!initialBooking) {
-      return;
-    }
+  if (!initialBooking) {
+    return;
+  }
 
-    setBooking(initialBooking);
+  setBooking(initialBooking);
 
-    const firm = firmMaster.find(
-      (item) =>
-        item.id === initialBooking.firmId
-    );
+  const firm = firmMaster.find(
+    (item) =>
+      item.id === initialBooking.firmId
+  );
 
-    setFirmSearch(firm?.name || "");
-  }, [initialBooking]);
+  setFirmSearch(firm?.name || "");
+}, [initialBooking]);
 
   /*
    * ---------------------------------------------------------
    * SAVE BOOKING
    * ---------------------------------------------------------
-   *
-   * New booking:
-   *   Adds a new record to uranote-bookings.
-   *
-   * Existing booking:
-   *   Updates the existing record using bookingId.
-   *
-   * This allows edit/page.tsx to retrieve saved bookings.
    */
 
-  function saveBooking() {
+  function saveBooking(): Booking | null {
     if (typeof window === "undefined") {
-      return;
+      return null;
     }
 
     const bookingId =
@@ -155,7 +162,7 @@ export default function BookingForm({
       console.error(
         "Cannot save booking: firm not found."
       );
-      return;
+      return null;
     }
 
     const bookingToSave: Booking = {
@@ -192,7 +199,8 @@ export default function BookingForm({
 
     const existingIndex = bookings.findIndex(
       (item) =>
-        item.bookingId === bookingToSave.bookingId
+        item.bookingId ===
+        bookingToSave.bookingId
     );
 
     if (existingIndex >= 0) {
@@ -206,6 +214,11 @@ export default function BookingForm({
       JSON.stringify(bookings)
     );
 
+    localStorage.setItem(
+      "uranote-current-booking",
+      JSON.stringify(bookingToSave)
+    );
+
     setBooking(bookingToSave);
     onChange?.(bookingToSave);
     onSaved?.(bookingToSave);
@@ -215,6 +228,356 @@ export default function BookingForm({
     setTimeout(() => {
       setSaved(false);
     }, 2000);
+
+    return bookingToSave;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * DOCUMENT HELPERS
+   * ---------------------------------------------------------
+   */
+
+  function getFirmForBooking(
+    currentBooking: Booking
+  ) {
+    return firmMaster.find(
+      (firm) => firm.id === currentBooking.firmId
+    );
+  }
+
+  function getTravelDates(
+    currentBooking: Booking
+  ) {
+    if (
+      !currentBooking.travelStartDate &&
+      !currentBooking.travelEndDate
+    ) {
+      return "";
+    }
+
+    if (
+      currentBooking.travelStartDate &&
+      !currentBooking.travelEndDate
+    ) {
+      return currentBooking.travelStartDate;
+    }
+
+    if (
+      !currentBooking.travelStartDate &&
+      currentBooking.travelEndDate
+    ) {
+      return currentBooking.travelEndDate;
+    }
+
+    return `${currentBooking.travelStartDate} to ${currentBooking.travelEndDate}`;
+  }
+
+  function getBookingNumber(
+    currentBooking: Booking
+  ) {
+    return (
+      currentBooking.bookingNumber ||
+      currentBooking.bookingId ||
+      ""
+    );
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * EXPORT RECEIPT
+   * ---------------------------------------------------------
+   */
+
+  function handleExportReceipt() {
+    const savedBooking = saveBooking();
+
+    if (!savedBooking) {
+      return;
+    }
+
+    const firm = getFirmForBooking(savedBooking);
+
+    if (!firm) {
+      console.error(
+        "Cannot export receipt: firm not found."
+      );
+      return;
+    }
+
+    setExporting("receipt");
+
+    try {
+      const receipt = {
+        booking: savedBooking,
+
+        receiptNo:
+          getBookingNumber(savedBooking),
+
+        date:
+          savedBooking.bookingDate ||
+          new Date().toLocaleDateString("en-CA"),
+
+        customerName:
+          savedBooking.customer.name,
+
+        customerPhone:
+          savedBooking.customer.phone,
+
+        customerEmail:
+          savedBooking.customer.email,
+
+        travelDates:
+          getTravelDates(savedBooking),
+
+        totalAmount:
+          savedBooking.services.reduce(
+            (total, service) =>
+              total + Number(service.amount || 0),
+            0
+          ),
+
+        amountReceived:
+          Number(
+            savedBooking.amountReceived || 0
+          ),
+
+        balanceDue:
+          Math.max(
+            savedBooking.services.reduce(
+              (total, service) =>
+                total +
+                Number(service.amount || 0),
+              0
+            ) -
+            Number(
+              savedBooking.amountReceived || 0
+            ),
+            0
+          ),
+
+        services:
+          savedBooking.services.map(
+            (service) => ({
+              serviceName:
+                service.type === "taxi"
+                  ? "Taxi/s"
+                  : service.type === "hotel"
+                    ? "Hotel/s"
+                    : service.type ===
+                      "flight"
+                      ? "Ticket/s"
+                      : "Miscellaneous",
+
+              description:
+                service.description || "N/A",
+
+              quantity:
+                Number(service.quantity || 0),
+
+              amount:
+                Number(service.amount || 0),
+            })
+          ),
+      };
+
+      generateReceiptPdf({
+        receipt,
+        firm,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to export receipt:",
+        error
+      );
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * EXPORT VOUCHER
+   * ---------------------------------------------------------
+   */
+
+  function handleExportVoucher() {
+    const savedBooking = saveBooking();
+
+    if (!savedBooking) {
+      return;
+    }
+
+    const firm = getFirmForBooking(savedBooking);
+
+    if (!firm) {
+      console.error(
+        "Cannot export voucher: firm not found."
+      );
+      return;
+    }
+
+    setExporting("voucher");
+
+    try {
+      const voucher = {
+        booking: savedBooking,
+
+        voucherNo:
+          getBookingNumber(savedBooking),
+
+        date:
+          savedBooking.bookingDate ||
+          new Date().toLocaleDateString("en-CA"),
+
+        guestName:
+          savedBooking.customer.name,
+
+        guestPhone:
+          savedBooking.customer.phone,
+
+        guestEmail:
+          savedBooking.customer.email,
+
+        travelDates:
+          getTravelDates(savedBooking),
+
+        totalAmount:
+          savedBooking.services.reduce(
+            (total, service) =>
+              total + Number(service.amount || 0),
+            0
+          ),
+
+        advancePayment:
+          Number(
+            savedBooking.amountReceived || 0
+          ),
+
+        yetToBePaid:
+          Math.max(
+            savedBooking.services.reduce(
+              (total, service) =>
+                total +
+                Number(service.amount || 0),
+              0
+            ) -
+            Number(
+              savedBooking.amountReceived || 0
+            ),
+            0
+          ),
+
+        taxi:
+          savedBooking.taxi,
+
+        hotels:
+          savedBooking.hotels,
+
+        otherServices:
+          savedBooking.otherServices,
+      };
+
+      exportVoucherPdf(
+        voucher,
+        firm
+      );
+    } catch (error) {
+      console.error(
+        "Failed to export voucher:",
+        error
+      );
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * EXPORT PAYMENT SCHEDULE
+   * ---------------------------------------------------------
+   */
+
+  function handleExportPaymentSchedule() {
+    const savedBooking = saveBooking();
+
+    if (!savedBooking) {
+      return;
+    }
+
+    const firm = getFirmForBooking(savedBooking);
+
+    if (!firm) {
+      console.error(
+        "Cannot export payment schedule: firm not found."
+      );
+      return;
+    }
+
+    setExporting("payment");
+
+    try {
+      const totalAmount =
+        savedBooking.services.reduce(
+          (total, service) =>
+            total + Number(service.amount || 0),
+          0
+        );
+
+      const amountReceived =
+        Number(
+          savedBooking.amountReceived || 0
+        );
+
+      const paymentSchedule = {
+        booking: savedBooking,
+
+        bookingNumber:
+          getBookingNumber(savedBooking),
+
+        date:
+          savedBooking.bookingDate ||
+          new Date().toLocaleDateString("en-CA"),
+
+        customerName:
+          savedBooking.customer.name,
+
+        customerPhone:
+          savedBooking.customer.phone,
+
+        customerEmail:
+          savedBooking.customer.email,
+
+        travelDates:
+          getTravelDates(savedBooking),
+
+        totalAmount,
+
+        amountReceived,
+
+        balanceDue:
+          Math.max(
+            totalAmount -
+            amountReceived,
+            0
+          ),
+
+        paymentSchedule:
+          savedBooking.paymentSchedule,
+      };
+
+      generatePaymentSchedulePdf(
+        paymentSchedule,
+        firm
+      );
+    } catch (error) {
+      console.error(
+        "Failed to export payment schedule:",
+        error
+      );
+    } finally {
+      setExporting(null);
+    }
   }
 
   /*
@@ -378,13 +741,13 @@ export default function BookingForm({
   const bookingValue =
     booking.services.reduce(
       (total, service) =>
-        total + service.amount,
+        total + Number(service.amount || 0),
       0
     );
 
   const balanceDue = Math.max(
     bookingValue -
-    booking.amountReceived,
+    Number(booking.amountReceived || 0),
     0
   );
 
@@ -704,7 +1067,8 @@ export default function BookingForm({
 
                 const updated: Booking = {
                   ...booking,
-                  firmId: exactFirm?.id || "",
+                  firmId:
+                    exactFirm?.id || "",
                 };
 
                 setBooking(updated);
@@ -714,9 +1078,7 @@ export default function BookingForm({
                 if (
                   firmSearch.trim() !== ""
                 ) {
-                  setShowFirmResults(
-                    true
-                  );
+                  setShowFirmResults(true);
                 }
               }}
               placeholder="Search firm..."
@@ -785,7 +1147,6 @@ export default function BookingForm({
         </div>
 
       </section>
-
 
       {/* =====================================================
           CUSTOMER
@@ -872,7 +1233,6 @@ export default function BookingForm({
 
       </section>
 
-
       {/* =====================================================
           TRAVEL
       ====================================================== */}
@@ -939,7 +1299,6 @@ export default function BookingForm({
 
       </section>
 
-
       {/* =====================================================
           RECEIPT SERVICES
       ====================================================== */}
@@ -955,7 +1314,6 @@ export default function BookingForm({
           <table className="w-full min-w-[700px] text-sm">
 
             <thead>
-
               <tr className="border-b border-gray-300">
 
                 <th className="px-3 py-2 text-left">
@@ -975,7 +1333,6 @@ export default function BookingForm({
                 </th>
 
               </tr>
-
             </thead>
 
             <tbody>
@@ -993,8 +1350,8 @@ export default function BookingForm({
                   <input
                     type="text"
                     value={
-                      booking.taxi
-                        ?.vehicle || ""
+                      booking.taxi?.vehicle ||
+                      ""
                     }
                     onChange={(e) =>
                       updateTaxi(
@@ -1051,7 +1408,6 @@ export default function BookingForm({
                 </td>
 
               </tr>
-
 
               {/* Hotel */}
 
@@ -1126,7 +1482,6 @@ export default function BookingForm({
 
               </tr>
 
-
               {/* Flight */}
 
               <tr className="border-b border-gray-200">
@@ -1199,7 +1554,6 @@ export default function BookingForm({
                 </td>
 
               </tr>
-
 
               {/* Miscellaneous */}
 
@@ -1283,7 +1637,6 @@ export default function BookingForm({
 
         </div>
 
-
         {/* =====================================================
             PAYMENT DETAILS
         ====================================================== */}
@@ -1327,7 +1680,10 @@ export default function BookingForm({
           <div className="mt-6 ml-auto max-w-sm space-y-2 text-sm">
 
             <div className="flex justify-between">
-              <span>Booking Value</span>
+
+              <span>
+                Booking Value
+              </span>
 
               <span>
                 ₹
@@ -1338,20 +1694,27 @@ export default function BookingForm({
                   }
                 )}
               </span>
+
             </div>
 
             <div className="flex justify-between">
-              <span>Payment Received</span>
+
+              <span>
+                Payment Received
+              </span>
 
               <span>
                 ₹
-                {booking.amountReceived.toLocaleString(
+                {Number(
+                  booking.amountReceived || 0
+                ).toLocaleString(
                   "en-IN",
                   {
                     minimumFractionDigits: 2,
                   }
                 )}
               </span>
+
             </div>
 
             <div className="flex justify-between border-t border-gray-300 pt-2 font-bold">
@@ -1374,10 +1737,9 @@ export default function BookingForm({
 
           </div>
 
-
           {/* Receipt Actions */}
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
 
             <button
               type="button"
@@ -1385,6 +1747,19 @@ export default function BookingForm({
               className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
             >
               Preview Receipt
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportReceipt}
+              disabled={
+                exporting !== null
+              }
+              className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === "receipt"
+                ? "Exporting..."
+                : "Export Receipt"}
             </button>
 
             <button
@@ -1401,7 +1776,6 @@ export default function BookingForm({
 
       </section>
 
-
       {/* =====================================================
           VOUCHER DETAILS
       ====================================================== */}
@@ -1411,7 +1785,6 @@ export default function BookingForm({
         <h2 className="mb-4 text-lg font-bold">
           Voucher Details
         </h2>
-
 
         {/* Taxi */}
 
@@ -1469,7 +1842,6 @@ export default function BookingForm({
           </div>
 
         </div>
-
 
         {/* Hotels */}
 
@@ -1638,7 +2010,6 @@ export default function BookingForm({
 
         </div>
 
-
         {/* Other Services */}
 
         <div className="mt-5 rounded-lg border border-gray-200 p-4">
@@ -1783,10 +2154,9 @@ export default function BookingForm({
 
         </div>
 
-
         {/* Voucher Actions */}
 
-        <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
 
           <button
             type="button"
@@ -1794,6 +2164,21 @@ export default function BookingForm({
             className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
           >
             Preview Voucher
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              handleExportVoucher
+            }
+            disabled={
+              exporting !== null
+            }
+            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {exporting === "voucher"
+              ? "Exporting..."
+              : "Export Voucher"}
           </button>
 
           <button
@@ -1807,7 +2192,6 @@ export default function BookingForm({
         </div>
 
       </section>
-
 
       {/* =====================================================
           PAYMENT SCHEDULE
@@ -2071,7 +2455,6 @@ export default function BookingForm({
 
           </div>
 
-
           {/* Other Payments */}
 
           <div className="rounded-lg border border-gray-200 p-4">
@@ -2199,17 +2582,33 @@ export default function BookingForm({
 
         </div>
 
-
         {/* Payment Schedule Actions */}
 
-        <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5">
 
           <button
             type="button"
-            onClick={onPaymentSchedule}
+            onClick={
+              onPaymentSchedule
+            }
             className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
           >
             Preview Payment Schedule
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              handleExportPaymentSchedule
+            }
+            disabled={
+              exporting !== null
+            }
+            className="rounded border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {exporting === "payment"
+              ? "Exporting..."
+              : "Export Payment Schedule"}
           </button>
 
           <button
@@ -2223,7 +2622,6 @@ export default function BookingForm({
         </div>
 
       </section>
-
 
       {/* =====================================================
           SAVE STATUS

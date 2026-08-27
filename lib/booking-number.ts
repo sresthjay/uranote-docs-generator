@@ -38,17 +38,11 @@ export function formatBookingNumber(
 ): string {
   const firmCode = firm.code;
 
-  const travelDate = booking.travelStartDate;
-
-  if (!travelDate) {
-    return `${firmCode} ${String(
-      booking.bookingSequence
-    ).padStart(3, "0")}`;
-  }
+  const bookingDate = booking.bookingDate;
 
   const monthNumber = Number(
-    travelDate.slice(5, 7)
-  );
+  bookingDate.slice(5, 7)
+);
 
   const monthCode =
     MONTH_CODES[monthNumber];

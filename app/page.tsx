@@ -89,7 +89,7 @@ export default function DashboardPage() {
   function getBalanceDue(booking: Booking) {
     return Math.max(
       getBookingValue(booking) -
-        Number(booking.amountReceived || 0),
+      Number(booking.amountReceived || 0),
       0
     );
   }
@@ -104,9 +104,8 @@ export default function DashboardPage() {
     );
 
     if (!firm) {
-      return `Booking #${
-        booking.bookingSequence || "—"
-      }`;
+      return `Booking #${booking.bookingSequence || "—"
+        }`;
     }
 
     return formatBookingNumber(
@@ -454,8 +453,8 @@ export default function DashboardPage() {
                           <span className="font-medium text-gray-700">
                             {booking.bookingDate
                               ? formatDate(
-                                  booking.bookingDate
-                                )
+                                booking.bookingDate
+                              )
                               : "—"}
                           </span>
                         </p>
@@ -545,7 +544,7 @@ export default function DashboardPage() {
                           {formatCurrency(
                             Number(
                               booking.amountReceived ||
-                                0
+                              0
                             )
                           )}
                         </p>
@@ -562,11 +561,10 @@ export default function DashboardPage() {
                         </p>
 
                         <p
-                          className={`mt-2 font-semibold ${
-                            balanceDue > 0
+                          className={`mt-2 font-semibold ${balanceDue > 0
                               ? "text-amber-600"
                               : "text-green-600"
-                          }`}
+                            }`}
                         >
                           {formatCurrency(
                             balanceDue
@@ -603,11 +601,11 @@ export default function DashboardPage() {
 
                         {activeServices.length ===
                           0 && (
-                          <span className="text-sm text-gray-500">
-                            No services added
-                            yet.
-                          </span>
-                        )}
+                            <span className="text-sm text-gray-500">
+                              No services added
+                              yet.
+                            </span>
+                          )}
 
                       </div>
 
@@ -631,7 +629,7 @@ export default function DashboardPage() {
                       </button>
 
                       <Link
-                        href={`/edit?id=${encodeURIComponent(
+                        href={`/edit?bookingId=${encodeURIComponent(
                           booking.bookingId
                         )}`}
                         className="inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"

@@ -1,0 +1,173 @@
+name: Deploy Itinerary Builder
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------
+      # Node.js
+      # ------------------------------------------------------------
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ------------------------------------------------------------
+      # Install dependencies
+      # ------------------------------------------------------------
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ------------------------------------------------------------
+      # Build static Next.js application
+      # ------------------------------------------------------------
+
+      - name: Build application
+        run: npm run build
+
+      # ------------------------------------------------------------
+      # Verify static export
+      # ------------------------------------------------------------
+
+      - name: Verify static build
+        run: |
+          if [ ! -d "out" ]; then
+            echo "ERROR: out/ directory was not generated."
+            exit 1
+          fi
+
+          if [ ! -f "out/index.html" ]; then
+            echo "ERROR: out/index.html was not generated."
+            exit 1
+          fi
+
+          echo "Static export generated successfully."
+
+          du -sh out
+
+      # ------------------------------------------------------------
+      # Configure SSH
+      # ------------------------------------------------------------
+
+      - name: Configure SSH
+        env:
+          HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        shell: bash
+        run: |
+          echo "HOME=$HOME"
+          echo "User=$(whoami)"
+          echo "Creating SSH directory..."
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          printf '%s\n' "$HOSTINGER_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+
+          echo "Scanning Hostinger SSH host..."
+
+          ssh-keyscan \
+            -T 10 \
+            -p "$HOSTINGER_SSH_PORT" \
+            "$HOSTINGER_SSH_HOST" \
+            >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+          echo "SSH configuration completed."
+
+      # ------------------------------------------------------------
+      # Test SSH
+      # ------------------------------------------------------------
+
+      - name: Test SSH connection
+        env:
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          ssh \
+            -p "$HOSTINGER_SSH_PORT" \
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST" \
+            "echo 'SSH connection successful.'"
+
+      # ------------------------------------------------------------
+      # Create deployment directory
+      # ------------------------------------------------------------
+
+      - name: Prepare Hostinger directory
+        env:
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOSTINGER_DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+        run: |
+          ssh \
+            -p "$HOSTINGER_SSH_PORT" \
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST" \
+            "mkdir -p '$HOSTINGER_DEPLOY_PATH'"
+
+      # ------------------------------------------------------------
+      # Deploy static application
+      # ------------------------------------------------------------
+
+      - name: Deploy application
+        env:
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOSTINGER_DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -p $HOSTINGER_SSH_PORT" \
+            out/ \
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST:$HOSTINGER_DEPLOY_PATH/"
+
+      # ------------------------------------------------------------
+      # Verify deployment
+      # ------------------------------------------------------------
+
+      - name: Verify deployed files
+        env:
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOSTINGER_DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+        run: |
+          ssh \
+            -p "$HOSTINGER_SSH_PORT" \
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST" \
+            "test -f '$HOSTINGER_DEPLOY_PATH/index.html'"
+
+          echo "index.html successfully deployed."
+
+      # ------------------------------------------------------------
+      # Deployment complete
+      # ------------------------------------------------------------
+
+      - name: Deployment completed
+        run: |
+          echo "=========================================="
+          echo "Itinerary Builder deployed successfully."
+          echo "=========================================="

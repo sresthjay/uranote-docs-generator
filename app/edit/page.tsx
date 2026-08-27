@@ -7,7 +7,7 @@ import BookingForm from "@/components/forms/BookingForm";
 import ReceiptPreview from "@/components/previews/ReceiptPreview";
 import VoucherPreview from "@/components/previews/VoucherPreview";
 import SchedulePreview from "@/components/previews/SchedulePreview";
-
+import { getBooking } from "@/lib/db";
 import { Booking, Firm } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
 
@@ -39,6 +39,8 @@ export default function EditBookingPage() {
     );
   }
 
+  const selectedFirm = getSelectedFirm();
+
   function handleReceipt() {
     setPreviewType("receipt");
   }
@@ -51,53 +53,35 @@ export default function EditBookingPage() {
     setPreviewType("schedule");
   }
 
-  useEffect(() => {
-    try {
-      const savedBooking =
-        localStorage.getItem(
-          "uranote-current-booking"
-        );
+ useEffect(() => {
+   try {
+     const params = new URLSearchParams(
+       window.location.search
+     );
 
-      if (savedBooking) {
-        const parsedBooking =
-          JSON.parse(savedBooking) as Booking;
+     const bookingId =
+       params.get("id") || params.get("bookingId");
 
-        setBooking(parsedBooking);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load saved booking:",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+     if (!bookingId) {
+       setLoading(false);
+       return;
+     }
 
-  const selectedFirm =
-    getSelectedFirm();
+     const savedBooking =
+       getBooking(bookingId);
 
-  /* =====================================================
-     LOADING
-  ====================================================== */
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-
-            <p className="text-sm text-gray-500">
-              Loading booking...
-            </p>
-
-          </div>
-
-        </div>
-      </main>
-    );
-  }
+     if (savedBooking) {
+       setBooking(savedBooking);
+     }
+   } catch (error) {
+     console.error(
+       "Failed to load booking:",
+       error
+     );
+   } finally {
+     setLoading(false);
+   }
+ }, []);
 
   /* =====================================================
      NO BOOKING
