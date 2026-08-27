@@ -643,7 +643,7 @@ export async function generatePaymentSchedulePdf(
         doc.splitTextToSize(
           `${index + 1}. ${resolvedTerm}`,
           PDF_PAGE.contentWidth -
-            5
+          5
         );
 
       const lineHeight =
@@ -651,7 +651,7 @@ export async function generatePaymentSchedulePdf(
 
       const requiredHeight =
         lines.length *
-          lineHeight +
+        lineHeight +
         3;
 
       y = ensureSpace(
@@ -677,7 +677,7 @@ export async function generatePaymentSchedulePdf(
 
       y +=
         lines.length *
-          lineHeight +
+        lineHeight +
         3;
     }
   );
@@ -714,8 +714,12 @@ export async function generatePaymentSchedulePdf(
       firm
     );
 
+  const customerName =
+    booking.customer?.name ||
+    "Customer";
+
   const defaultFileName =
-    `${bookingNumber} - Payment Schedule`;
+    `Payment Schedule - ${bookingNumber} - ${customerName}`;
 
   finalizePdf(
     doc,

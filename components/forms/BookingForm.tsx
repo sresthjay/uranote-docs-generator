@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Booking,
   ServiceType,
@@ -97,6 +97,9 @@ export default function BookingForm({
   onPaymentSchedule,
   onSaved,
 }: BookingFormProps) {
+
+  const lastLoadedBookingId = useRef<string | null>(null);
+
   const [booking, setBooking] = useState<Booking>(
     initialBooking || createInitialBooking()
   );
@@ -133,6 +136,21 @@ export default function BookingForm({
       return;
     }
 
+    /*
+     * Only load the booking when a different booking
+     * is opened. Do not reload it every time the parent
+     * sends an updated booking object.
+     */
+    if (
+      lastLoadedBookingId.current ===
+      initialBooking.bookingId
+    ) {
+      return;
+    }
+
+    lastLoadedBookingId.current =
+      initialBooking.bookingId;
+
     setBooking(initialBooking);
 
     const firm = firmMaster.find(
@@ -141,6 +159,7 @@ export default function BookingForm({
     );
 
     setFirmSearch(firm?.name || "");
+    setShowFirmResults(false);
   }, [initialBooking]);
 
   /*
@@ -1069,6 +1088,8 @@ export default function BookingForm({
 
           {/* Firm */}
 
+          {/* Firm */}
+
           <div className="relative">
 
             <label className="mb-1 block text-sm font-medium">
@@ -1079,11 +1100,9 @@ export default function BookingForm({
               type="text"
               value={firmSearch}
               onChange={(e) => {
-                const value =
-                  e.target.value;
+                const value = e.target.value;
 
                 setFirmSearch(value);
-
                 setShowFirmResults(
                   value.trim() !== ""
                 );
@@ -1091,11 +1110,8 @@ export default function BookingForm({
                 const exactFirm =
                   firmMaster.find(
                     (firm) =>
-                      firm.name
-                        .toLowerCase() ===
-                      value
-                        .trim()
-                        .toLowerCase()
+                      firm.name.toLowerCase() ===
+                      value.trim().toLowerCase()
                   );
 
                 const updated: Booking = {
@@ -1108,9 +1124,7 @@ export default function BookingForm({
                 onChange?.(updated);
               }}
               onFocus={() => {
-                if (
-                  firmSearch.trim() !== ""
-                ) {
+                if (firmSearch.trim() !== "") {
                   setShowFirmResults(true);
                 }
               }}
@@ -1121,24 +1135,22 @@ export default function BookingForm({
             {showFirmResults &&
               firmSearch.trim() !== "" &&
               filteredFirms.length > 0 && (
-                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded border border-gray-200 bg-white shadow-lg">
+                <div className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded border border-gray-200 bg-white shadow-lg">
 
-                  {filteredFirms.map(
-                    (firm) => (
-                      <button
-                        key={firm.id}
-                        type="button"
-                        onClick={() =>
-                          selectFirm(
-                            firm.id
-                          )
-                        }
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
-                      >
-                        {firm.name}
-                      </button>
-                    )
-                  )}
+                  {filteredFirms.map((firm) => (
+                    <button
+                      key={firm.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+
+                        selectFirm(firm.id);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+                    >
+                      {firm.name}
+                    </button>
+                  ))}
 
                 </div>
               )}

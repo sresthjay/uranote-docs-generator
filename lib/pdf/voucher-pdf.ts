@@ -572,7 +572,7 @@ export async function exportVoucherPdf(
     "Customer";
 
   const fileName =
-    `${bookingNumber} - Booking Voucher - ${customerName}`;
+    `Booking Voucher - ${bookingNumber} - ${customerName}`;
 
   finalizePdf(
     doc,
