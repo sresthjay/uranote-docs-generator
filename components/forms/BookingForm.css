@@ -1,0 +1,680 @@
+/* =========================================================
+   URANOTE BOOKING FORM
+   ========================================================= */
+
+.booking-form {
+  --uf-primary: #8f5034;
+  --uf-primary-dark: #75402a;
+  --uf-primary-soft: #f6eee9;
+
+  --uf-text: #292725;
+  --uf-text-muted: #716c65;
+  --uf-text-light: #918b83;
+
+  --uf-border: #e5e0d8;
+  --uf-border-light: #eeeae4;
+
+  --uf-bg: #f8f6f2;
+  --uf-white: #ffffff;
+
+  width: 100%;
+  color: var(--uf-text);
+}
+
+/* =========================================================
+   MAIN FORM SPACING
+   ========================================================= */
+
+.booking-form > div {
+  width: 100%;
+}
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.booking-form section {
+  border: 1px solid var(--uf-border) !important;
+  border-radius: 16px !important;
+  background: var(--uf-white);
+  padding: 24px !important;
+  box-shadow: 0 1px 2px rgba(41, 39, 37, 0.03);
+}
+
+.booking-form section + section {
+  margin-top: 24px;
+}
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
+
+.booking-form h2 {
+  margin-bottom: 20px !important;
+  color: var(--uf-text);
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.booking-form h3 {
+  color: var(--uf-text);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+/* =========================================================
+   LABELS
+   ========================================================= */
+
+.booking-form label {
+  display: block;
+  margin-bottom: 7px !important;
+  color: #5f5952;
+  font-size: 12px !important;
+  line-height: 1.4;
+  font-weight: 600 !important;
+}
+
+/* =========================================================
+   ALL INPUTS
+   ========================================================= */
+
+.booking-form input,
+.booking-form select,
+.booking-form textarea {
+  width: 100%;
+  min-height: 42px;
+
+  border: 1px solid #dcd6ce !important;
+  border-radius: 10px !important;
+
+  background: #ffffff !important;
+  color: var(--uf-text) !important;
+
+  padding: 10px 12px !important;
+
+  font-size: 13px !important;
+  line-height: 1.4;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.booking-form input:hover,
+.booking-form select:hover,
+.booking-form textarea:hover {
+  border-color: #c9c1b8 !important;
+}
+
+.booking-form input:focus,
+.booking-form select:focus,
+.booking-form textarea:focus {
+  border-color: var(--uf-primary) !important;
+  box-shadow: 0 0 0 3px rgba(143, 80, 52, 0.09);
+}
+
+/* =========================================================
+   PLACEHOLDERS
+   ========================================================= */
+
+.booking-form input::placeholder,
+.booking-form textarea::placeholder {
+  color: #aaa39b;
+  opacity: 1;
+}
+
+/* =========================================================
+   DATE INPUTS
+   ========================================================= */
+
+.booking-form input[type="date"] {
+  cursor: pointer;
+}
+
+.booking-form input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.booking-form input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* =========================================================
+   NUMBER INPUTS
+   ========================================================= */
+
+.booking-form input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+.booking-form input[type="number"]::-webkit-inner-spin-button,
+.booking-form input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.55;
+}
+
+/* =========================================================
+   DISABLED INPUTS
+   ========================================================= */
+
+.booking-form input:disabled,
+.booking-form select:disabled,
+.booking-form textarea:disabled {
+  cursor: not-allowed;
+  background: #f4f2ef !important;
+  border-color: #e4dfd8 !important;
+  color: #77716a !important;
+}
+
+/* =========================================================
+   FIRM SEARCH DROPDOWN
+   ========================================================= */
+
+.booking-form .firm-results {
+  position: absolute;
+  z-index: 50;
+
+  width: 100%;
+  margin-top: 5px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--uf-border);
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 10px 25px rgba(41, 39, 37, 0.10),
+    0 2px 6px rgba(41, 39, 37, 0.05);
+}
+
+.booking-form .firm-results button {
+  display: block;
+  width: 100%;
+
+  padding: 10px 13px;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--uf-text);
+
+  text-align: left;
+  font-size: 13px;
+
+  cursor: pointer;
+
+  transition: background 0.12s ease;
+}
+
+.booking-form .firm-results button:hover {
+  background: var(--uf-bg);
+}
+
+/* =========================================================
+   HELPER TEXT
+   ========================================================= */
+
+.booking-form p {
+  color: var(--uf-text-muted);
+}
+
+.booking-form .helper-text {
+  margin-top: 6px;
+
+  color: var(--uf-text-light);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   NESTED CARDS
+   ========================================================= */
+
+.booking-form .form-card {
+  border: 1px solid var(--uf-border-light);
+  border-radius: 13px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.booking-form .form-card + .form-card {
+  margin-top: 16px;
+}
+
+/* =========================================================
+   CARD HEADERS
+   ========================================================= */
+
+.booking-form .form-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 16px;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.booking-form table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  overflow: hidden;
+
+  border: 1px solid var(--uf-border);
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+.booking-form thead {
+  background: var(--uf-bg);
+}
+
+.booking-form th {
+  padding: 11px 13px !important;
+
+  border-bottom: 1px solid var(--uf-border);
+
+  color: #625c55;
+
+  font-size: 11px !important;
+  line-height: 1.4;
+  font-weight: 650;
+
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.booking-form td {
+  padding: 12px 13px !important;
+
+  border-bottom: 1px solid var(--uf-border-light);
+
+  vertical-align: middle;
+}
+
+.booking-form tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.booking-form tbody tr:hover {
+  background: #fcfbf9;
+}
+
+/* =========================================================
+   TABLE INPUTS
+   ========================================================= */
+
+.booking-form table input {
+  min-height: 38px;
+
+  border-radius: 8px !important;
+
+  padding: 8px 10px !important;
+
+  font-size: 13px !important;
+}
+
+/* Quantity */
+
+.booking-form table td:nth-child(3) input {
+  width: 78px !important;
+  margin: 0 auto;
+}
+
+/* Amount */
+
+.booking-form table td:nth-child(4) input {
+  min-width: 110px;
+}
+
+/* =========================================================
+   PAYMENT SUMMARY
+   ========================================================= */
+
+.booking-form .payment-summary {
+  margin-top: 20px;
+  margin-left: auto;
+
+  width: 100%;
+  max-width: 360px;
+
+  padding: 16px;
+
+  border: 1px solid var(--uf-border);
+  border-radius: 12px;
+
+  background: var(--uf-bg);
+}
+
+.booking-form .payment-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 7px 0;
+
+  color: var(--uf-text-muted);
+  font-size: 13px;
+}
+
+.booking-form .payment-summary-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 5px;
+  padding-top: 12px;
+
+  border-top: 1px solid #ddd7cf;
+
+  color: var(--uf-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   ACTION AREAS
+   ========================================================= */
+
+.booking-form .action-area {
+  margin-top: 22px;
+  padding-top: 18px;
+
+  border-top: 1px solid var(--uf-border-light);
+}
+
+.booking-form .action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 9px;
+}
+
+/* =========================================================
+   BUTTON BASE
+   ========================================================= */
+
+.booking-form button {
+  min-height: 38px;
+
+  border-radius: 9px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.booking-form button:active {
+  transform: translateY(1px);
+}
+
+.booking-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   PRIMARY BUTTON
+   ========================================================= */
+
+.booking-form .btn-primary {
+  border: 1px solid var(--uf-primary);
+  background: var(--uf-primary);
+
+  color: #ffffff;
+
+  padding: 9px 17px;
+}
+
+.booking-form .btn-primary:hover {
+  border-color: var(--uf-primary-dark);
+  background: var(--uf-primary-dark);
+}
+
+/* =========================================================
+   SECONDARY BUTTON
+   ========================================================= */
+
+.booking-form .btn-secondary {
+  border: 1px solid #d8d2ca;
+  background: #ffffff;
+
+  color: #4f4a45;
+
+  padding: 9px 17px;
+}
+
+.booking-form .btn-secondary:hover {
+  border-color: #c5bdb4;
+  background: #f8f6f2;
+}
+
+/* =========================================================
+   DARK / PREVIEW BUTTON
+   ========================================================= */
+
+.booking-form .btn-dark {
+  border: 1px solid #292725;
+  background: #292725;
+
+  color: #ffffff;
+
+  padding: 9px 17px;
+}
+
+.booking-form .btn-dark:hover {
+  background: #151413;
+}
+
+/* =========================================================
+   ADD BUTTON
+   ========================================================= */
+
+.booking-form .btn-add {
+  border: 1px solid #d8d2ca;
+  background: #ffffff;
+
+  color: var(--uf-primary);
+
+  padding: 7px 12px;
+
+  font-size: 12px;
+}
+
+.booking-form .btn-add:hover {
+  border-color: #c6a898;
+  background: var(--uf-primary-soft);
+}
+
+/* =========================================================
+   REMOVE BUTTON
+   ========================================================= */
+
+.booking-form .btn-remove {
+  border: 1px solid #ead1cb;
+  background: #ffffff;
+
+  color: #b24b3d;
+
+  padding: 7px 11px;
+}
+
+.booking-form .btn-remove:hover {
+  border-color: #dfb5ad;
+  background: #fff7f5;
+}
+
+/* =========================================================
+   SAVE CONFIRMATION
+   ========================================================= */
+
+.booking-form .save-message {
+  margin-top: 8px;
+
+  color: #3f7d4f;
+
+  text-align: right;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+.booking-form .empty-state {
+  padding: 18px;
+
+  border: 1px dashed #ddd7cf;
+  border-radius: 10px;
+
+  background: #faf9f7;
+
+  color: #918b83;
+
+  text-align: center;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+.booking-form .error-message {
+  margin-top: 8px;
+
+  color: #b33f32;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   PAYMENT ENTRY
+   ========================================================= */
+
+.booking-form .payment-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px auto;
+  gap: 12px;
+  align-items: end;
+
+  padding: 14px;
+
+  border: 1px solid var(--uf-border-light);
+  border-radius: 11px;
+
+  background: #ffffff;
+}
+
+.booking-form .payment-entry + .payment-entry {
+  margin-top: 9px;
+}
+
+/* =========================================================
+   HOTEL / SERVICE ENTRY
+   ========================================================= */
+
+.booking-form .service-entry {
+  padding: 16px;
+
+  border: 1px solid var(--uf-border-light);
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+.booking-form .service-entry + .service-entry {
+  margin-top: 12px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .booking-form section {
+    padding: 18px !important;
+    border-radius: 13px !important;
+  }
+
+  .booking-form h2 {
+    font-size: 16px;
+  }
+
+  .booking-form .payment-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-form .payment-summary {
+    max-width: none;
+  }
+
+  .booking-form .action-buttons {
+    justify-content: stretch;
+  }
+
+  .booking-form .action-buttons button {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .booking-form section {
+    padding: 15px !important;
+  }
+
+  .booking-form .form-card {
+    padding: 14px;
+  }
+
+  .booking-form table {
+    min-width: 680px;
+  }
+
+  .booking-form .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .booking-form .action-buttons button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.booking-form button:focus-visible,
+.booking-form input:focus-visible,
+.booking-form select:focus-visible,
+.booking-form textarea:focus-visible {
+  outline: 2px solid rgba(143, 80, 52, 0.35);
+  outline-offset: 2px;
+}

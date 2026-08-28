@@ -1,5 +1,6 @@
 "use client";
 
+import "./BookingForm.css";
 import { useEffect, useRef, useState } from "react";
 import {
   Booking,
@@ -125,6 +126,15 @@ export default function BookingForm({
     "receipt" | "voucher" | "payment" | null
   >(null);
 
+  const [quantityInputs, setQuantityInputs] = useState<
+    Record<ServiceType, string>
+  >({
+    taxi: "1",
+    hotel: "0",
+    flight: "0",
+    miscellaneous: "0",
+  });
+
   /*
    * ---------------------------------------------------------
    * LOAD BOOKING WHEN EDIT PAGE PROVIDES ONE
@@ -152,6 +162,28 @@ export default function BookingForm({
       initialBooking.bookingId;
 
     setBooking(initialBooking);
+    setQuantityInputs({
+      taxi: String(
+        initialBooking.services.find(
+          (service) => service.type === "taxi"
+        )?.quantity ?? 0
+      ),
+      hotel: String(
+        initialBooking.services.find(
+          (service) => service.type === "hotel"
+        )?.quantity ?? 0
+      ),
+      flight: String(
+        initialBooking.services.find(
+          (service) => service.type === "flight"
+        )?.quantity ?? 0
+      ),
+      miscellaneous: String(
+        initialBooking.services.find(
+          (service) => service.type === "miscellaneous"
+        )?.quantity ?? 0
+      ),
+    });
 
     const firm = firmMaster.find(
       (item) =>
@@ -709,6 +741,41 @@ export default function BookingForm({
     onChange?.(updated);
   }
 
+  function handleQuantityChange(
+    type: ServiceType,
+    value: string
+  ) {
+    setQuantityInputs((current) => ({
+      ...current,
+      [type]: value,
+    }));
+
+    if (value !== "") {
+      updateService(
+        type,
+        "quantity",
+        value
+      );
+    }
+  }
+
+  function handleQuantityBlur(
+    type: ServiceType
+  ) {
+    if (quantityInputs[type] === "") {
+      setQuantityInputs((current) => ({
+        ...current,
+        [type]: "0",
+      }));
+
+      updateService(
+        type,
+        "quantity",
+        "0"
+      );
+    }
+  }
+
   function updateAmountReceived(
     value: string
   ) {
@@ -1072,7 +1139,7 @@ export default function BookingForm({
    */
 
   return (
-    <div className="space-y-8">
+    <div className="booking-form space-y-8">
 
       {/* =====================================================
           BOOKING INFORMATION
@@ -1326,6 +1393,7 @@ export default function BookingForm({
               value={
                 booking.travelEndDate
               }
+              min={booking.travelStartDate || undefined}
               onChange={(e) =>
                 updateBooking(
                   "travelEndDate",
@@ -1414,28 +1482,17 @@ export default function BookingForm({
 
                   <input
                     type="number"
-                    min="0"
-                    value={
-                      getService("taxi").quantity === 0
-                        ? ""
-                        : getService("taxi").quantity
-                    }
+                    min="1"
+                    value={quantityInputs.taxi}
                     onChange={(e) =>
-                      updateService(
+                      handleQuantityChange(
                         "taxi",
-                        "quantity",
                         e.target.value
                       )
                     }
-                    onBlur={(e) => {
-                      if (e.target.value === "") {
-                        updateService(
-                          "taxi",
-                          "quantity",
-                          "0"
-                        );
-                      }
-                    }}
+                    onBlur={() =>
+                      handleQuantityBlur("taxi")
+                    }
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1498,27 +1555,16 @@ export default function BookingForm({
                   <input
                     type="number"
                     min="0"
-                    value={
-                      getService("hotel").quantity === 0
-                        ? ""
-                        : getService("hotel").quantity
-                    }
+                    value={quantityInputs.hotel}
                     onChange={(e) =>
-                      updateService(
+                      handleQuantityChange(
                         "hotel",
-                        "quantity",
                         e.target.value
                       )
                     }
-                    onBlur={(e) => {
-                      if (e.target.value === "") {
-                        updateService(
-                          "hotel",
-                          "quantity",
-                          "0"
-                        );
-                      }
-                    }}
+                    onBlur={() =>
+                      handleQuantityBlur("hotel")
+                    }
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1581,27 +1627,16 @@ export default function BookingForm({
                   <input
                     type="number"
                     min="0"
-                    value={
-                      getService("flight").quantity === 0
-                        ? ""
-                        : getService("flight").quantity
-                    }
+                    value={quantityInputs.flight}
                     onChange={(e) =>
-                      updateService(
+                      handleQuantityChange(
                         "flight",
-                        "quantity",
                         e.target.value
                       )
                     }
-                    onBlur={(e) => {
-                      if (e.target.value === "") {
-                        updateService(
-                          "flight",
-                          "quantity",
-                          "0"
-                        );
-                      }
-                    }}
+                    onBlur={() =>
+                      handleQuantityBlur("flight")
+                    }
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
 
@@ -1665,17 +1700,15 @@ export default function BookingForm({
                   <input
                     type="number"
                     min="0"
-                    value={
-                      getService("miscellaneous").quantity === 0
-                        ? ""
-                        : getService("miscellaneous").quantity
-                    }
+                    value={quantityInputs.miscellaneous}
                     onChange={(e) =>
-                      updateService(
+                      handleQuantityChange(
                         "miscellaneous",
-                        "quantity",
                         e.target.value
                       )
+                    }
+                    onBlur={() =>
+                      handleQuantityBlur("miscellaneous")
                     }
                     className="w-24 rounded border border-gray-300 px-3 py-2 text-center"
                   />
