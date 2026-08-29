@@ -15,6 +15,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Uranote Docs Generator",
   description: "Generate Receipts, Vouchers, Schedules on the go",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      {
+        url: "/icons/icon.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Uranote Docs",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

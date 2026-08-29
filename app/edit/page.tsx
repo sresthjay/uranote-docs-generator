@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 
 import BookingForm from "@/components/forms/BookingForm";
-
 import ReceiptPreview from "@/components/previews/ReceiptPreview";
 import VoucherPreview from "@/components/previews/VoucherPreview";
 import SchedulePreview from "@/components/previews/SchedulePreview";
+
 import { getBooking } from "@/lib/db";
 import { Booking, Firm } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
@@ -17,15 +18,98 @@ type PreviewType =
   | "schedule"
   | null;
 
+function subscribeToUrl() {
+  return () => {};
+}
+
+function getUrlSnapshot() {
+  return window.location.search;
+}
+
+function getUrlServerSnapshot() {
+  return "";
+}
+
 export default function EditBookingPage() {
+  const router = useRouter();
+
+  const search = useSyncExternalStore(
+    subscribeToUrl,
+    getUrlSnapshot,
+    getUrlServerSnapshot
+  );
+
+  const bookingId =
+    new URLSearchParams(search).get("id") ||
+    new URLSearchParams(search).get("bookingId");
+
   const [booking, setBooking] =
     useState<Booking | null>(null);
 
   const [previewType, setPreviewType] =
     useState<PreviewType>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [showToTop, setShowToTop] =
+    useState(false);
+
+  /*
+   * =========================================================
+   * LOAD BOOKING
+   * =========================================================
+   */
+
+  useEffect(() => {
+    if (!bookingId) {
+      return;
+    }
+
+    const loadBooking = () => {
+      const savedBooking = getBooking(bookingId);
+
+      if (savedBooking) {
+        setBooking(savedBooking);
+      }
+    };
+
+    const timeoutId = window.setTimeout(
+      loadBooking,
+      0
+    );
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [bookingId]);
+
+  /*
+   * =========================================================
+   * SCROLL
+   * =========================================================
+   */
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowToTop(window.scrollY > 400);
+    };
+
+    window.addEventListener(
+      "scroll",
+      handleScroll
+    );
+
+    return () => {
+      window.removeEventListener(
+        "scroll",
+        handleScroll
+      );
+    };
+  }, []);
+
+  /*
+   * =========================================================
+   * HELPERS
+   * =========================================================
+   */
 
   function getSelectedFirm(): Firm | null {
     if (!booking?.firmId) {
@@ -53,49 +137,9 @@ export default function EditBookingPage() {
     setPreviewType("schedule");
   }
 
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(
-        window.location.search
-      );
-
-      const bookingId =
-        params.get("id") || params.get("bookingId");
-
-      if (!bookingId) {
-        setLoading(false);
-        return;
-      }
-
-      const savedBooking =
-        getBooking(bookingId);
-
-      if (savedBooking) {
-        setBooking(savedBooking);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load booking:",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const [showToTop, setShowToTop] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowToTop(window.scrollY > 400);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  function goToDashboard() {
+    router.push("/");
+  }
 
   function scrollToTop() {
     window.scrollTo({
@@ -104,28 +148,26 @@ export default function EditBookingPage() {
     });
   }
 
-  /* =====================================================
-     NO BOOKING
-  ====================================================== */
+  /*
+   * =========================================================
+   * LOADING / NOT FOUND
+   * =========================================================
+   */
 
   if (!booking) {
     return (
       <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
-
         <div className="mx-auto max-w-5xl">
 
           <button
             type="button"
-            onClick={() =>
-              window.location.href = "/"
-            }
+            onClick={goToDashboard}
             className="mb-6 inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
           >
             ← Back to Dashboard
           </button>
 
           <div className="mb-8">
-
             <p className="mb-1 text-sm font-medium text-blue-600">
               Uranote Operations
             </p>
@@ -134,59 +176,49 @@ export default function EditBookingPage() {
               Edit Booking
             </h1>
 
+            <p className="mt-2 text-sm text-gray-500">
+              Loading booking...
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
 
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500">
-              —
-            </div>
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
 
-            <h2 className="mt-4 font-semibold text-gray-900">
-              No saved booking found
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Create a new booking first, then return here
-              to edit it.
+            <p className="mt-4 text-sm text-gray-500">
+              Loading booking...
             </p>
 
           </div>
 
         </div>
-
       </main>
     );
   }
 
+  /*
+   * =========================================================
+   * MAIN RENDER
+   * =========================================================
+   */
+
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
-
       <div className="mx-auto max-w-5xl">
-
-        {/* =====================================================
-            BOOKING FORM
-        ====================================================== */}
 
         {!previewType && (
           <>
-
-            {/* Header */}
-
             <div className="mb-8">
 
               <button
                 type="button"
-                onClick={() =>
-                  window.location.href = "/"
-                }
+                onClick={goToDashboard}
                 className="mb-5 inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
               >
                 ← Back to Dashboard
               </button>
 
               <div>
-
                 <p className="mb-1 text-sm font-medium text-blue-600">
                   Uranote Operations
                 </p>
@@ -199,13 +231,9 @@ export default function EditBookingPage() {
                   Update booking details, services,
                   payments and operational information.
                 </p>
-
               </div>
 
             </div>
-
-
-            {/* Form */}
 
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
@@ -220,19 +248,11 @@ export default function EditBookingPage() {
               />
 
             </div>
-
           </>
         )}
 
-
-        {/* =====================================================
-            PREVIEW
-        ====================================================== */}
-
         {previewType && selectedFirm && (
           <div>
-
-            {/* Preview Header */}
 
             <div className="mb-6">
 
@@ -247,13 +267,11 @@ export default function EditBookingPage() {
               </button>
 
               <div>
-
                 <p className="mb-1 text-sm font-medium text-blue-600">
                   Document Preview
                 </p>
 
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-
                   {previewType === "receipt" &&
                     "Receipt Preview"}
 
@@ -262,62 +280,40 @@ export default function EditBookingPage() {
 
                   {previewType === "schedule" &&
                     "Payment Schedule Preview"}
-
                 </h1>
-
               </div>
 
             </div>
 
-
-            {/* Receipt */}
-
             {previewType === "receipt" && (
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
                 <ReceiptPreview
                   booking={booking}
                   firm={selectedFirm}
                 />
-
               </div>
             )}
 
-
-            {/* Voucher */}
-
             {previewType === "voucher" && (
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
                 <VoucherPreview
                   booking={booking}
                   firm={selectedFirm}
                 />
-
               </div>
             )}
 
-
-            {/* Payment Schedule */}
-
             {previewType === "schedule" && (
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
                 <SchedulePreview
                   booking={booking}
                   firm={selectedFirm}
                 />
-
               </div>
             )}
 
           </div>
         )}
-
-
-        {/* =====================================================
-            FIRM MISSING
-        ====================================================== */}
 
         {previewType && !selectedFirm && (
           <div>
@@ -364,3 +360,4 @@ export default function EditBookingPage() {
     </main>
   );
 }
+

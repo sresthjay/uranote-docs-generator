@@ -1,56 +1,51 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { Booking } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
 import { formatBookingNumber } from "@/lib/booking-number";
 
+const STORAGE_KEY = "uranote-bookings";
+
+function subscribeToBookings(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("uranote-bookings-updated", callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("uranote-bookings-updated", callback);
+  };
+}
+
+function getBookingsSnapshot() {
+  return localStorage.getItem(STORAGE_KEY) || "[]";
+}
+
+function getBookingsServerSnapshot() {
+  return "[]";
+}
+
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
 
-  /*
-   * =========================================================
-   * LOAD SAVED BOOKINGS
-   * =========================================================
-   */
+  const storedBookings = useSyncExternalStore(
+    subscribeToBookings,
+    getBookingsSnapshot,
+    getBookingsServerSnapshot
+  );
 
-  useEffect(() => {
+  const bookings = useMemo<Booking[]>(() => {
     try {
-      const storedBookings =
-        localStorage.getItem("uranote-bookings");
-
-      if (!storedBookings) {
-        setBookings([]);
-        return;
-      }
-
       const parsed = JSON.parse(storedBookings);
 
-      if (Array.isArray(parsed)) {
-        setBookings(parsed as Booking[]);
-      } else {
-        setBookings([]);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load saved bookings:",
-        error
-      );
-
-      setBookings([]);
-    } finally {
-      setLoading(false);
+      return Array.isArray(parsed)
+        ? (parsed as Booking[])
+        : [];
+    } catch {
+      return [];
     }
-  }, []);
-
-  /*
-   * =========================================================
-   * HELPERS
-   * =========================================================
-   */
+  }, [storedBookings]);
 
   function formatDate(date: string) {
     if (!date) return "—";
@@ -69,13 +64,10 @@ export default function DashboardPage() {
   }
 
   function formatCurrency(amount: number) {
-    return `₹${Number(amount || 0).toLocaleString(
-      "en-IN",
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }
-    )}`;
+    return `₹${Number(amount || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }
 
   function getBookingValue(booking: Booking) {
@@ -89,7 +81,7 @@ export default function DashboardPage() {
   function getBalanceDue(booking: Booking) {
     return Math.max(
       getBookingValue(booking) -
-      Number(booking.amountReceived || 0),
+        Number(booking.amountReceived || 0),
       0
     );
   }
@@ -104,51 +96,38 @@ export default function DashboardPage() {
     );
 
     if (!firm) {
-      return `Booking #${booking.bookingSequence || "—"
-        }`;
+      return `Booking #${booking.bookingSequence || "—"}`;
     }
 
-    return formatBookingNumber(
-      booking,
-      firm
-    );
+    return formatBookingNumber(booking, firm);
   }
-
-  /*
-   * =========================================================
-   * SEARCH + SORT
-   * =========================================================
-   */
 
   const filteredBookings = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    const filtered = bookings.filter(
-      (booking) => {
-        if (!query) {
-          return true;
-        }
-
-        const bookingNumber =
-          getBookingNumber(booking);
-
-        const searchableText = [
-          bookingNumber,
-          booking.bookingId,
-          booking.customer?.name,
-          booking.customer?.phone,
-          booking.customer?.email,
-          booking.travelStartDate,
-          booking.travelEndDate,
-          booking.bookingDate,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return searchableText.includes(query);
+    const filtered = bookings.filter((booking) => {
+      if (!query) {
+        return true;
       }
-    );
+
+      const bookingNumber = getBookingNumber(booking);
+
+      const searchableText = [
+        bookingNumber,
+        booking.bookingId,
+        booking.customer?.name,
+        booking.customer?.phone,
+        booking.customer?.email,
+        booking.travelStartDate,
+        booking.travelEndDate,
+        booking.bookingDate,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
 
     return [...filtered].sort((a, b) => {
       const dateA = new Date(
@@ -163,17 +142,8 @@ export default function DashboardPage() {
     });
   }, [bookings, search]);
 
-  /*
-   * =========================================================
-   * DELETE BOOKING
-   * =========================================================
-   */
-
-  function handleDeleteBooking(
-    booking: Booking
-  ) {
-    const bookingNumber =
-      getBookingNumber(booking);
+  function handleDeleteBooking(booking: Booking) {
+    const bookingNumber = getBookingNumber(booking);
 
     const confirmed = window.confirm(
       `Are you sure you want to delete booking ${bookingNumber}?\n\nThis will permanently remove the booking from this browser.`
@@ -183,24 +153,20 @@ export default function DashboardPage() {
       return;
     }
 
-    const updatedBookings =
-      bookings.filter(
-        (item) =>
-          item.bookingId !==
-          booking.bookingId
-      );
+    const updatedBookings = bookings.filter(
+      (item) =>
+        item.bookingId !== booking.bookingId
+    );
 
     localStorage.setItem(
-      "uranote-bookings",
+      STORAGE_KEY,
       JSON.stringify(updatedBookings)
     );
 
-    setBookings(updatedBookings);
+    window.dispatchEvent(
+      new Event("uranote-bookings-updated")
+    );
 
-    /*
-     * If the deleted booking was also the
-     * current booking, remove that pointer.
-     */
     const currentBooking =
       localStorage.getItem(
         "uranote-current-booking"
@@ -208,12 +174,10 @@ export default function DashboardPage() {
 
     if (currentBooking) {
       try {
-        const parsed =
-          JSON.parse(currentBooking);
+        const parsed = JSON.parse(currentBooking);
 
         if (
-          parsed?.bookingId ===
-          booking.bookingId
+          parsed?.bookingId === booking.bookingId
         ) {
           localStorage.removeItem(
             "uranote-current-booking"
@@ -227,42 +191,11 @@ export default function DashboardPage() {
     }
   }
 
-  /*
-   * =========================================================
-   * LOADING STATE
-   * =========================================================
-   */
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">
-              Loading dashboard...
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  /*
-   * =========================================================
-   * RENDER
-   * =========================================================
-   */
-
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
 
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
-
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-
           <div>
             <p className="mb-1 text-sm font-medium text-blue-600">
               Uranote Operations
@@ -283,18 +216,10 @@ export default function DashboardPage() {
           >
             + New Booking
           </Link>
-
         </div>
 
-
-        {/* =====================================================
-            SEARCH
-        ====================================================== */}
-
         <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
             <div>
               <h2 className="font-semibold text-gray-900">
                 Bookings
@@ -310,7 +235,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="w-full sm:max-w-md">
-
               <label
                 htmlFor="booking-search"
                 className="sr-only"
@@ -328,22 +252,12 @@ export default function DashboardPage() {
                 placeholder="Search booking no., customer, phone..."
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
-
             </div>
-
           </div>
-
         </section>
 
-
-        {/* =====================================================
-            EMPTY STATE
-        ====================================================== */}
-
         {bookings.length === 0 ? (
-
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500">
               +
             </div>
@@ -353,8 +267,7 @@ export default function DashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Create your first booking to see it
-              here.
+              Create your first booking to see it here.
             </p>
 
             <Link
@@ -363,24 +276,15 @@ export default function DashboardPage() {
             >
               Create New Booking
             </Link>
-
           </div>
-
         ) : filteredBookings.length === 0 ? (
-
-          /* =================================================
-             NO SEARCH RESULTS
-          ================================================== */
-
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-
             <h3 className="font-semibold text-gray-900">
               No matching bookings
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Try searching by booking number,
-              customer name or phone number.
+              Try searching by booking number, customer name or phone number.
             </p>
 
             <button
@@ -390,266 +294,182 @@ export default function DashboardPage() {
             >
               Clear Search
             </button>
-
           </div>
-
         ) : (
-
-          /* =================================================
-             BOOKING LIST
-          ================================================== */
-
           <section className="space-y-5">
+            {filteredBookings.map((booking) => {
+              const bookingValue =
+                getBookingValue(booking);
 
-            {filteredBookings.map(
-              (booking) => {
+              const balanceDue =
+                getBalanceDue(booking);
 
-                const bookingValue =
-                  getBookingValue(
-                    booking
-                  );
+              const activeServices =
+                booking.services.filter(
+                  (service) =>
+                    Number(service.amount || 0) > 0 ||
+                    Number(service.quantity || 0) > 0
+                );
 
-                const balanceDue =
-                  getBalanceDue(
-                    booking
-                  );
-
-                const activeServices =
-                  booking.services.filter(
-                    (service) =>
-                      Number(
-                        service.amount || 0
-                      ) > 0 ||
-                      Number(
-                        service.quantity || 0
-                      ) > 0
-                  );
-
-                return (
-
-                  <article
-                    key={booking.bookingId}
-                    className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
-                  >
-
-                    {/* Booking Header */}
-
-                    <div className="flex flex-col gap-4 border-b border-gray-200 bg-gray-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
-
-                      <div>
-
-                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                          Booking
-                        </p>
-
-                        <h3 className="mt-1 text-lg font-bold text-gray-900">
-                          {getBookingNumber(
-                            booking
-                          )}
-                        </h3>
-
-                        <p className="mt-1 text-xs text-gray-500">
-                          Booking Date:{" "}
-                          <span className="font-medium text-gray-700">
-                            {booking.bookingDate
-                              ? formatDate(
-                                booking.bookingDate
-                              )
-                              : "—"}
-                          </span>
-                        </p>
-
-                      </div>
-
-                      <div className="text-left sm:text-right">
-
-                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                          Booking Value
-                        </p>
-
-                        <p className="mt-1 text-xl font-bold text-gray-900">
-                          {formatCurrency(
-                            bookingValue
-                          )}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-
-                    {/* Booking Details */}
-
-                    <div className="grid gap-0 divide-y divide-gray-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-
-                      {/* Customer */}
-
-                      <div className="p-5">
-
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                          Customer
-                        </p>
-
-                        <p className="mt-2 font-semibold text-gray-900">
-                          {booking.customer
-                            ?.name ||
-                            "—"}
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-500">
-                          {booking.customer
-                            ?.phone ||
-                            "No phone"}
-                        </p>
-
-                      </div>
-
-
-                      {/* Travel */}
-
-                      <div className="p-5">
-
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                          Travel
-                        </p>
-
-                        <p className="mt-2 font-semibold text-gray-900">
-                          {formatDate(
-                            booking.travelStartDate
-                          )}
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-500">
-                          to
-                        </p>
-
-                        <p className="mt-1 font-semibold text-gray-900">
-                          {formatDate(
-                            booking.travelEndDate
-                          )}
-                        </p>
-
-                      </div>
-
-
-                      {/* Payment Received */}
-
-                      <div className="p-5">
-
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                          Payment Received
-                        </p>
-
-                        <p className="mt-2 font-semibold text-gray-900">
-                          {formatCurrency(
-                            Number(
-                              booking.amountReceived ||
-                              0
-                            )
-                          )}
-                        </p>
-
-                      </div>
-
-
-                      {/* Balance Due */}
-
-                      <div className="p-5">
-
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                          Balance Due
-                        </p>
-
-                        <p
-                          className={`mt-2 font-semibold ${balanceDue > 0
-                              ? "text-amber-600"
-                              : "text-green-600"
-                            }`}
-                        >
-                          {formatCurrency(
-                            balanceDue
-                          )}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-
-                    {/* Services */}
-
-                    <div className="border-t border-gray-200 p-5">
-
-                      <p className="mb-3 text-sm font-semibold text-gray-900">
-                        Services
+              return (
+                <article
+                  key={booking.bookingId}
+                  className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 border-b border-gray-200 bg-gray-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Booking
                       </p>
 
-                      <div className="flex flex-wrap gap-2">
+                      <h3 className="mt-1 text-lg font-bold text-gray-900">
+                        {getBookingNumber(booking)}
+                      </h3>
 
-                        {activeServices.map(
-                          (service) => (
-                            <span
-                              key={
-                                service.type
-                              }
-                              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium capitalize text-gray-700"
-                            >
-                              {service.type}
-                            </span>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Booking Date:{" "}
+                        <span className="font-medium text-gray-700">
+                          {booking.bookingDate
+                            ? formatDate(
+                                booking.bookingDate
+                              )
+                            : "—"}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Booking Value
+                      </p>
+
+                      <p className="mt-1 text-xl font-bold text-gray-900">
+                        {formatCurrency(bookingValue)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-0 divide-y divide-gray-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+                    <div className="p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Customer
+                      </p>
+
+                      <p className="mt-2 font-semibold text-gray-900">
+                        {booking.customer?.name || "—"}
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        {booking.customer?.phone ||
+                          "No phone"}
+                      </p>
+                    </div>
+
+                    <div className="p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Travel
+                      </p>
+
+                      <p className="mt-2 font-semibold text-gray-900">
+                        {formatDate(
+                          booking.travelStartDate
+                        )}
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        to
+                      </p>
+
+                      <p className="mt-1 font-semibold text-gray-900">
+                        {formatDate(
+                          booking.travelEndDate
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Payment Received
+                      </p>
+
+                      <p className="mt-2 font-semibold text-gray-900">
+                        {formatCurrency(
+                          Number(
+                            booking.amountReceived || 0
                           )
                         )}
-
-                        {activeServices.length ===
-                          0 && (
-                            <span className="text-sm text-gray-500">
-                              No services added
-                              yet.
-                            </span>
-                          )}
-
-                      </div>
-
+                      </p>
                     </div>
 
+                    <div className="p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Balance Due
+                      </p>
 
-                    {/* Actions */}
-
-                    <div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 bg-gray-50/50 p-5">
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteBooking(
-                            booking
-                          )
-                        }
-                        className="inline-flex items-center rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                      <p
+                        className={`mt-2 font-semibold ${
+                          balanceDue > 0
+                            ? "text-amber-600"
+                            : "text-green-600"
+                        }`}
                       >
-                        Delete
-                      </button>
-
-                      <Link
-                        href={`/edit?bookingId=${encodeURIComponent(
-                          booking.bookingId
-                        )}`}
-                        className="inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                      >
-                        Edit Booking
-                      </Link>
-
+                        {formatCurrency(balanceDue)}
+                      </p>
                     </div>
+                  </div>
 
-                  </article>
+                  <div className="border-t border-gray-200 p-5">
+                    <p className="mb-3 text-sm font-semibold text-gray-900">
+                      Services
+                    </p>
 
-                );
-              }
-            )}
+                    <div className="flex flex-wrap gap-2">
+                      {activeServices.map(
+                        (service) => (
+                          <span
+                            key={service.type}
+                            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium capitalize text-gray-700"
+                          >
+                            {service.type}
+                          </span>
+                        )
+                      )}
 
+                      {activeServices.length === 0 && (
+                        <span className="text-sm text-gray-500">
+                          No services added yet.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 bg-gray-50/50 p-5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteBooking(booking)
+                      }
+                      className="inline-flex items-center rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+
+                    <Link
+                      href={`/edit?bookingId=${encodeURIComponent(
+                        booking.bookingId
+                      )}`}
+                      className="inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                    >
+                      Edit Booking
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </section>
-
         )}
-
       </div>
     </main>
   );
 }
+
