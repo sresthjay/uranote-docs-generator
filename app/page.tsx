@@ -129,17 +129,10 @@ export default function DashboardPage() {
       return searchableText.includes(query);
     });
 
-    return [...filtered].sort((a, b) => {
-      const dateA = new Date(
-        a.bookingDate || 0
-      ).getTime();
-
-      const dateB = new Date(
-        b.bookingDate || 0
-      ).getTime();
-
-      return dateB - dateA;
-    });
+    // Latest saved booking first.
+    // localStorage stores bookings in save order,
+    // so reversing the filtered array puts the newest first.
+    return [...filtered].reverse();
   }, [bookings, search]);
 
   function handleDeleteBooking(booking: Booking) {
@@ -472,4 +465,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-

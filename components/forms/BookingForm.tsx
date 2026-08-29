@@ -129,7 +129,7 @@ export default function BookingForm({
   const [quantityInputs, setQuantityInputs] = useState<
     Record<ServiceType, string>
   >({
-    taxi: "1",
+    taxi: "0",
     hotel: "0",
     flight: "0",
     miscellaneous: "0",
