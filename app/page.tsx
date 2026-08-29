@@ -1,50 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Booking } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
 import { formatBookingNumber } from "@/lib/booking-number";
 
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  /*
-   * =========================================================
-   * LOAD SAVED BOOKINGS
-   * =========================================================
-   */
-
-  useEffect(() => {
-    try {
-      const storedBookings =
-        localStorage.getItem("uranote-bookings");
-
-      if (!storedBookings) {
-        setBookings([]);
-        return;
-      }
-
-      const parsed = JSON.parse(storedBookings);
-
-      if (Array.isArray(parsed)) {
-        setBookings(parsed as Booking[]);
-      } else {
-        setBookings([]);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load saved bookings:",
-        error
-      );
-
-      setBookings([]);
-    } finally {
-      setLoading(false);
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    if (typeof localStorage === "undefined") {
+      return [];
     }
-  }, []);
+    try {
+      const storedBookings = localStorage.getItem("uranote-bookings");
+      if (!storedBookings) {
+        return [];
+      }
+      const parsed = JSON.parse(storedBookings);
+      if (Array.isArray(parsed)) {
+        return parsed as Booking[];
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to load saved bookings:", error);
+      return [];
+    }
+  });
+  const [search, setSearch] = useState("");
 
   /*
    * =========================================================
@@ -225,26 +207,6 @@ export default function DashboardPage() {
         );
       }
     }
-  }
-
-  /*
-   * =========================================================
-   * LOADING STATE
-   * =========================================================
-   */
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">
-              Loading dashboard...
-            </p>
-          </div>
-        </div>
-      </main>
-    );
   }
 
   /*

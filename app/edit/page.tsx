@@ -7,6 +7,7 @@ import BookingForm from "@/components/forms/BookingForm";
 import ReceiptPreview from "@/components/previews/ReceiptPreview";
 import VoucherPreview from "@/components/previews/VoucherPreview";
 import SchedulePreview from "@/components/previews/SchedulePreview";
+import SWRegistration from "@/components/sw-registration";
 import { getBooking } from "@/lib/db";
 import { Booking, Firm } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
@@ -19,13 +20,29 @@ type PreviewType =
 
 export default function EditBookingPage() {
   const [booking, setBooking] =
-    useState<Booking | null>(null);
+    useState<Booking | null>(() => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
+      const bookingId =
+        params.get("id") || params.get("bookingId");
+
+      if (!bookingId) {
+        return null;
+      }
+
+      const savedBooking =
+        getBooking(bookingId);
+
+      return savedBooking || null;
+    });
 
   const [previewType, setPreviewType] =
     useState<PreviewType>(null);
-
-  const [loading, setLoading] =
-    useState(true);
 
   function getSelectedFirm(): Firm | null {
     if (!booking?.firmId) {
@@ -52,36 +69,6 @@ export default function EditBookingPage() {
   function handlePaymentSchedule() {
     setPreviewType("schedule");
   }
-
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(
-        window.location.search
-      );
-
-      const bookingId =
-        params.get("id") || params.get("bookingId");
-
-      if (!bookingId) {
-        setLoading(false);
-        return;
-      }
-
-      const savedBooking =
-        getBooking(bookingId);
-
-      if (savedBooking) {
-        setBooking(savedBooking);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load booking:",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const [showToTop, setShowToTop] = useState(false);
 
@@ -154,6 +141,8 @@ export default function EditBookingPage() {
           </div>
 
         </div>
+
+        <SWRegistration />
 
       </main>
     );
@@ -360,6 +349,8 @@ export default function EditBookingPage() {
           ↑
         </button>
       )}
+
+      <SWRegistration />
 
     </main>
   );

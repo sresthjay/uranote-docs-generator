@@ -8,6 +8,8 @@ import ReceiptPreview from "@/components/previews/ReceiptPreview";
 import VoucherPreview from "@/components/previews/VoucherPreview";
 import SchedulePreview from "@/components/previews/SchedulePreview";
 
+import SWRegistration from "@/components/sw-registration";
+
 import { Booking, Firm } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
 
@@ -291,6 +293,8 @@ export default function Home() {
           ↑
         </button>
       )}
+
+    <SWRegistration />
 
     </main>
   );
