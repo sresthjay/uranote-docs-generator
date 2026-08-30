@@ -2080,6 +2080,7 @@ export default function BookingForm({
                         value={
                           hotel.checkOut
                         }
+                        min={hotel.checkIn || undefined}
                         onChange={(e) =>
                           updateHotel(
                             index,
