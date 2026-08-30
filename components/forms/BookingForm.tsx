@@ -889,7 +889,11 @@ export default function BookingForm({
         vehicle: "",
         startDate: "",
         endDate: "",
-        contact: "",
+        contact:
+      firmMaster.find(
+        (firm) =>
+          firm.id === booking.firmId
+      )?.phone || "",
       };
 
     const updatedTaxi = {
@@ -931,13 +935,16 @@ export default function BookingForm({
    */
 
   function addHotel() {
+    const previousHotel =
+      booking.hotels[booking.hotels.length - 1];
+
     const updated: Booking = {
       ...booking,
       hotels: [
         ...booking.hotels,
         {
           name: "",
-          checkIn: "",
+          checkIn: previousHotel?.checkOut || "",
           checkOut: "",
           contact: "",
         },
@@ -1131,6 +1138,8 @@ export default function BookingForm({
     setBooking(updated);
     onChange?.(updated);
   }
+
+  const currentFirm = getFirmForBooking(booking);
 
   /*
    * =========================================================
@@ -1945,6 +1954,7 @@ export default function BookingForm({
                 type="tel"
                 value={
                   booking.taxi?.contact ||
+                  currentFirm?.phone ||
                   ""
                 }
                 onChange={(e) =>
@@ -1976,7 +1986,7 @@ export default function BookingForm({
             <button
               type="button"
               onClick={addHotel}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+              className="hidden rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 sm:block"
             >
               + Add Hotel
             </button>
@@ -2051,8 +2061,11 @@ export default function BookingForm({
 
                       <input
                         type="date"
-                        value={
-                          hotel.checkIn
+                        value={hotel.checkIn}
+                        min={
+                          index > 0
+                            ? booking.hotels[index - 1].checkOut || undefined
+                            : undefined
                         }
                         onChange={(e) =>
                           updateHotel(
@@ -2125,6 +2138,16 @@ export default function BookingForm({
 
                 </div>
               )
+            )}
+
+            {booking.hotels.length > 0 && (
+              <button
+                type="button"
+                onClick={addHotel}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+              >
+                + Add Hotel
+              </button>
             )}
 
           </div>
