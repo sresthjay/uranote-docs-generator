@@ -27,9 +27,9 @@ interface BookingFormProps {
   initialBooking?: Booking;
 
   onChange?: (booking: Booking) => void;
-  onReceipt?: () => void;
-  onVoucher?: () => void;
-  onPaymentSchedule?: () => void;
+  onReceipt: () => void;
+  onVoucher: () => void;
+  onPaymentSchedule: () => void;
   onSaved?: (booking: Booking) => void;
 }
 
@@ -299,10 +299,6 @@ export default function BookingForm({
     }
 
     setSavedSection(section);
-
-    setTimeout(() => {
-      setSavedSection(null);
-    }, 2000);
   }
 
   /*
@@ -363,7 +359,7 @@ export default function BookingForm({
    * ---------------------------------------------------------
    */
 
-  function handleExportReceipt() {
+  async function handleExportReceipt() {
     const savedBooking = saveBooking();
 
     if (!savedBooking) {
@@ -470,6 +466,10 @@ export default function BookingForm({
         error
       );
     } finally {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1500)
+      );
+
       setExporting(null);
     }
   }
@@ -480,7 +480,7 @@ export default function BookingForm({
    * ---------------------------------------------------------
    */
 
-  function handleExportVoucher() {
+  async function handleExportVoucher() {
     const savedBooking = saveBooking();
 
     if (!savedBooking) {
@@ -568,6 +568,10 @@ export default function BookingForm({
         error
       );
     } finally {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1500)
+      );
+
       setExporting(null);
     }
   }
@@ -578,7 +582,7 @@ export default function BookingForm({
    * ---------------------------------------------------------
    */
 
-  function handleExportPaymentSchedule() {
+  async function handleExportPaymentSchedule() {
     const savedBooking = saveBooking();
 
     if (!savedBooking) {
@@ -657,6 +661,10 @@ export default function BookingForm({
         error
       );
     } finally {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1500)
+      );
+
       setExporting(null);
     }
   }
@@ -890,10 +898,10 @@ export default function BookingForm({
         startDate: "",
         endDate: "",
         contact:
-      firmMaster.find(
-        (firm) =>
-          firm.id === booking.firmId
-      )?.phone || "",
+          firmMaster.find(
+            (firm) =>
+              firm.id === booking.firmId
+          )?.phone || "",
       };
 
     const updatedTaxi = {
@@ -1872,8 +1880,13 @@ export default function BookingForm({
 
               <button
                 type="button"
-                onClick={onReceipt}
-                className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+                onClick={() => {
+                  if (savedSection === "receipt") {
+                    onReceipt();
+                  }
+                }}
+                disabled={savedSection !== "receipt"}
+                className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Preview
               </button>
@@ -2316,7 +2329,12 @@ export default function BookingForm({
 
             <button
               type="button"
-              onClick={onVoucher}
+              onClick={() => {
+                if (savedSection === "voucher") {
+                  onVoucher();
+                }
+              }}
+              disabled={savedSection !== "voucher"}
               className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
             >
               Preview
@@ -2756,9 +2774,12 @@ export default function BookingForm({
 
             <button
               type="button"
-              onClick={
-                onPaymentSchedule
-              }
+              onClick={() => {
+                if (savedSection === "payment") {
+                  onPaymentSchedule();
+                }
+              }}
+              disabled={savedSection !== "payment"}
               className="rounded bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
             >
               Preview
