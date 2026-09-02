@@ -718,8 +718,10 @@ export async function generatePaymentSchedulePdf(
     booking.customer?.name ||
     "Customer";
 
+  const year = new Date().getFullYear().toString().slice(-2);
+
   const defaultFileName =
-    `Payment Schedule - ${bookingNumber} - ${customerName}`;
+    `Payment Schedule - ${year}${bookingNumber} - ${customerName}`;
 
   finalizePdf(
     doc,

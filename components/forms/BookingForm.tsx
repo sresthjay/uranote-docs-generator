@@ -2182,7 +2182,7 @@ export default function BookingForm({
               onClick={
                 addOtherService
               }
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+              className="hidden rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 sm:block"
             >
               + Add Service
             </button>
@@ -2307,6 +2307,16 @@ export default function BookingForm({
               )
             )}
 
+            {/* Mobile Add Service */}
+
+            <button
+              type="button"
+              onClick={addOtherService}
+              className="mt-4 w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+            >
+              + Add Service
+            </button>
+
           </div>
 
         </div>
@@ -2396,7 +2406,7 @@ export default function BookingForm({
                     "taxi"
                   )
                 }
-                className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+                className="hidden rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 sm:block"
               >
                 + Add Taxi Payment
               </button>
@@ -2502,6 +2512,16 @@ export default function BookingForm({
 
             </div>
 
+            <button
+              type="button"
+              onClick={() =>
+                addPaymentSchedule("taxi")
+              }
+              className="mt-4 w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+            >
+              + Add Taxi Payment
+            </button>
+
           </div>
 
           {/* Hotel Payments */}
@@ -2521,7 +2541,7 @@ export default function BookingForm({
                     "hotel"
                   )
                 }
-                className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+                className="hidden rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 sm:block"
               >
                 + Add Hotel Payment
               </button>
@@ -2627,6 +2647,16 @@ export default function BookingForm({
 
             </div>
 
+            <button
+              type="button"
+              onClick={() =>
+                addPaymentSchedule("hotel")
+              }
+              className="mt-4 w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+            >
+              + Add Hotel Payment
+            </button>
+
           </div>
 
           {/* Other Payments */}
@@ -2646,7 +2676,7 @@ export default function BookingForm({
                     "other"
                   )
                 }
-                className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+                className="hidden rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 sm:block"
               >
                 + Add Other Payment
               </button>
@@ -2751,6 +2781,16 @@ export default function BookingForm({
               )}
 
             </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                addPaymentSchedule("other")
+              }
+              className="mt-4 w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+            >
+              + Add Other Payment
+            </button>
 
           </div>
 

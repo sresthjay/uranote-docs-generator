@@ -571,8 +571,10 @@ export async function exportVoucherPdf(
     booking.customer?.name ||
     "Customer";
 
-  const fileName =
-    `Booking Voucher - ${bookingNumber} - ${customerName}`;
+const year = new Date().getFullYear().toString().slice(-2);
+
+const fileName =
+  `Booking Voucher - ${year}${bookingNumber} - ${customerName}`;
 
   finalizePdf(
     doc,

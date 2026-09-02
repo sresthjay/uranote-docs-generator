@@ -562,6 +562,12 @@ export function createReceiptFileName(
             firm
         );
 
+    const year =
+        new Date()
+            .getFullYear()
+            .toString()
+            .slice(-2);
+
     const customerName =
         booking.customer?.name ||
         "Customer";
@@ -579,7 +585,7 @@ export function createReceiptFileName(
             );
 
     const safeBookingNumber =
-        bookingNumber
+        `${year}${bookingNumber}`
             .replace(
                 /[<>:"/\\|?*\x00-\x1F]/g,
                 "-"
