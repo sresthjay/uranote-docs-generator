@@ -2153,15 +2153,15 @@ export default function BookingForm({
               )
             )}
 
-            {booking.hotels.length > 0 && (
-              <button
-                type="button"
-                onClick={addHotel}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
-              >
-                + Add Hotel
-              </button>
-            )}
+            {/* Mobile Add Hotel */}
+
+            <button
+              type="button"
+              onClick={addHotel}
+              className="mt-4 w-full rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 sm:hidden"
+            >
+              + Add Hotel
+            </button>
 
           </div>
 
