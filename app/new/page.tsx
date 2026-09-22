@@ -146,6 +146,11 @@ export default function Home() {
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
               <BookingForm
+                initialBooking={
+                  booking.bookingId
+                    ? booking
+                    : undefined
+                }
                 onChange={setBooking}
                 onReceipt={handleReceipt}
                 onVoucher={handleVoucher}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Booking } from "@/lib/types";
 import { firmMaster } from "@/lib/firm-master";
 import { formatBookingNumber } from "@/lib/booking-number";
+import DataTransferControls from "@/components/shared/DataTransferControls";
 
 const STORAGE_KEY = "uranote-bookings";
 
@@ -247,6 +248,21 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+        </section>
+
+        <section className="mb-6 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-gray-900">
+              Backup & Restore
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Export all bookings to a portable file,
+              or restore them on another device.
+            </p>
+          </div>
+
+          <DataTransferControls />
         </section>
 
         {bookings.length === 0 ? (

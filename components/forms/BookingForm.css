@@ -678,3 +678,88 @@
   outline: 2px solid rgba(143, 80, 52, 0.35);
   outline-offset: 2px;
 }
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+html.dark .booking-form {
+  --uf-text: #efe9e0;
+  --uf-text-muted: #b9b1a6;
+  --uf-text-light: #978f83;
+
+  --uf-border: #3f3a33;
+  --uf-border-light: #38332d;
+
+  --uf-bg: #16130e;
+  --uf-white: #211d17;
+}
+
+html.dark .booking-form label {
+  color: #c4bcb0 !important;
+}
+
+html.dark .booking-form input,
+html.dark .booking-form select,
+html.dark .booking-form textarea {
+  background: #16130e !important;
+  border-color: #3f3a33 !important;
+  color: #efe9e0 !important;
+}
+
+html.dark .booking-form input::placeholder,
+html.dark .booking-form textarea::placeholder {
+  color: #837c72;
+}
+
+html.dark .booking-form input:hover,
+html.dark .booking-form select:hover,
+html.dark .booking-form textarea:hover {
+  border-color: #4b453d !important;
+}
+
+html.dark .booking-form input:disabled,
+html.dark .booking-form select:disabled,
+html.dark .booking-form textarea:disabled {
+  background: #262219 !important;
+  border-color: #38332d !important;
+  color: #6b645a !important;
+}
+
+html.dark .booking-form .firm-results {
+  background: #211d17;
+}
+
+html.dark .booking-form .form-card,
+html.dark .booking-form table,
+html.dark .booking-form .service-entry,
+html.dark .booking-form .payment-entry {
+  background: #211d17;
+}
+
+html.dark .booking-form tbody tr:hover {
+  background: #28231c;
+}
+
+html.dark .booking-form .btn-secondary,
+html.dark .booking-form .btn-add {
+  border-color: #4b453d;
+  background: #211d17;
+  color: #efe9e0;
+}
+
+html.dark .booking-form .btn-secondary:hover {
+  border-color: #5b554c;
+  background: #16130e;
+}
+
+html.dark .booking-form .btn-remove {
+  border-color: #7b2f27;
+  background: #211d17;
+  color: #e7a49a;
+}
+
+html.dark .booking-form .btn-remove:hover {
+  border-color: #9d3a30;
+  background: #33130f;
+}
