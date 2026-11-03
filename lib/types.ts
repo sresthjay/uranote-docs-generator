@@ -101,3 +101,45 @@ export interface PaymentSchedule {
   date: string;
   booking: Booking;
 }
+
+/**
+ * A single stay date range for a vendor booking request.
+ *
+ * A property booking can have more than one check-in and
+ * check-out pair, for example when a group splits its stay.
+ */
+export interface VendorBookingStay {
+  checkIn: string;
+  checkOut: string;
+  numberOfNights: number;
+}
+
+/**
+ * Temporary form data for a vendor (hotel) booking request.
+ *
+ * This is intentionally not a saved booking record. It exists
+ * only while the request form is open and is used to render
+ * the Hotel Booking Request PDF.
+ */
+export interface VendorBookingRequest {
+  firmId: string;
+
+  guestName: string;
+  contactNumber: string;
+  numberOfGuests: number;
+
+  propertyName: string;
+  destination: string;
+
+  stays: VendorBookingStay[];
+
+  numberOfRooms: number;
+  roomType: string;
+
+  mealPlan: string;
+
+  specialRequirements: string;
+
+  totalCost: number;
+  advancePayment: number;
+}

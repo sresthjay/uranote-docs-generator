@@ -183,6 +183,24 @@ export const PDF_FONTS = {
     fallback: "NotoSans",
 };
 
+const CUSTOM_PDF_FONTS = {
+    body: "SourceSans3",
+    heading: "SourceSans3",
+    bold: "SourceSans3",
+    italic: "SourceSans3",
+    fallback: "NotoSans",
+};
+
+const FALLBACK_PDF_FONTS = {
+    body: "helvetica",
+    heading: "helvetica",
+    bold: "helvetica",
+    italic: "helvetica",
+    fallback: "helvetica",
+};
+
+let currencySymbol = "₹";
+
 
 /*
  * =========================================================
@@ -367,84 +385,106 @@ async function loadFonts(): Promise<{
 export async function registerFonts(
     doc: jsPDF
 ): Promise<void> {
-    const fonts =
-        await loadFonts();
+    try {
+        const fonts =
+            await loadFonts();
 
 
-    /*
-     * -------------------------------------------------------
-     * SOURCE SANS 3 — REGULAR
-     * -------------------------------------------------------
-     */
+        /*
+         * -------------------------------------------------------
+         * SOURCE SANS 3 — REGULAR
+         * -------------------------------------------------------
+         */
 
-    doc.addFileToVFS(
-        "SourceSans3-Regular.ttf",
-        fonts.sourceSansRegular
-    );
+        doc.addFileToVFS(
+            "SourceSans3-Regular.ttf",
+            fonts.sourceSansRegular
+        );
 
-    doc.addFont(
-        "SourceSans3-Regular.ttf",
-        "SourceSans3",
-        "normal"
-    );
-
-
-    /*
-     * -------------------------------------------------------
-     * SOURCE SANS 3 — SEMIBOLD
-     * -------------------------------------------------------
-     */
-
-    doc.addFileToVFS(
-        "SourceSans3-SemiBold.ttf",
-        fonts.sourceSansSemiBold
-    );
-
-    doc.addFont(
-        "SourceSans3-SemiBold.ttf",
-        "SourceSans3",
-        "bold"
-    );
+        doc.addFont(
+            "SourceSans3-Regular.ttf",
+            "SourceSans3",
+            "normal"
+        );
 
 
-    /*
-     * -------------------------------------------------------
-     * NOTO SANS — REGULAR
-     * -------------------------------------------------------
-     *
-     * Used as a fallback for Unicode-heavy text such as
-     * the Indian Rupee symbol.
-     * -------------------------------------------------------
-     */
+        /*
+         * -------------------------------------------------------
+         * SOURCE SANS 3 — SEMIBOLD
+         * -------------------------------------------------------
+         */
 
-    doc.addFileToVFS(
-        "NotoSans-Regular.ttf",
-        fonts.notoSansRegular
-    );
+        doc.addFileToVFS(
+            "SourceSans3-SemiBold.ttf",
+            fonts.sourceSansSemiBold
+        );
 
-    doc.addFont(
-        "NotoSans-Regular.ttf",
-        "NotoSans",
-        "normal"
-    );
+        doc.addFont(
+            "SourceSans3-SemiBold.ttf",
+            "SourceSans3",
+            "bold"
+        );
 
 
-    /*
-     * -------------------------------------------------------
-     * NOTO SANS — BOLD
-     * -------------------------------------------------------
-     */
+        /*
+         * -------------------------------------------------------
+         * NOTO SANS — REGULAR
+         * -------------------------------------------------------
+         *
+         * Used as a fallback for Unicode-heavy text such as
+         * the Indian Rupee symbol.
+         * -------------------------------------------------------
+         */
 
-    doc.addFileToVFS(
-        "NotoSans-Bold.ttf",
-        fonts.notoSansBold
-    );
+        doc.addFileToVFS(
+            "NotoSans-Regular.ttf",
+            fonts.notoSansRegular
+        );
 
-    doc.addFont(
-        "NotoSans-Bold.ttf",
-        "NotoSans",
-        "bold"
-    );
+        doc.addFont(
+            "NotoSans-Regular.ttf",
+            "NotoSans",
+            "normal"
+        );
+
+
+        /*
+         * -------------------------------------------------------
+         * NOTO SANS — BOLD
+         * -------------------------------------------------------
+         */
+
+        doc.addFileToVFS(
+            "NotoSans-Bold.ttf",
+            fonts.notoSansBold
+        );
+
+        doc.addFont(
+            "NotoSans-Bold.ttf",
+            "NotoSans",
+            "bold"
+        );
+
+        Object.assign(PDF_FONTS, CUSTOM_PDF_FONTS);
+        currencySymbol = "₹";
+    } catch (error) {
+        /*
+         * Font files are fetched from the public folder. If that
+         * request fails (offline use, a temporarily unavailable
+         * server, or an unusual hosting setup), the document must
+         * still be exportable.
+         *
+         * jsPDF's built-in Helvetica family is used instead, and
+         * the rupee symbol is replaced with its ASCII equivalent.
+         */
+        console.warn(
+            "Custom PDF fonts could not be loaded. Falling back to built-in PDF fonts.",
+            error
+        );
+
+        Object.assign(PDF_FONTS, FALLBACK_PDF_FONTS);
+        currencySymbol = "Rs. ";
+    }
 }
 
 
@@ -573,7 +613,7 @@ export function formatCurrency(
     const safeAmount =
         Number(amount || 0);
 
-    return `₹${safeAmount.toLocaleString(
+    return `${currencySymbol}${safeAmount.toLocaleString(
         "en-IN",
         {
             minimumFractionDigits: 2,

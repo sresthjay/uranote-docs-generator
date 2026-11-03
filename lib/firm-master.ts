@@ -26,15 +26,27 @@ export const firmMaster: Firm[] = [
   },
 
   {
-    id: "explore-my-bharat",
-    name: "Explore My Bharat",
-    code: "EMB",
-    email: "exploremybharat01@gmail.com",
-    phone: "+91 62305 57851",
-    website: "www.exploremybharat.com",
-    issuedBy: "Mohit Sharma",
+    id: "himachal-cabs-online",
+    name: "Himachal Cabs Online",
+    code: "HCO",
+    email: "himachalcabsonline01@gmail.com",
+    phone: "+91 93173 24669",
+    website: "www.himachalcabsonline.co.in",
+    issuedBy: "Jayant Thakur",
     thankYouMessage:
-      "Thank You For Choosing Explore My Bharat",
+      "Thank You For Choosing Himachal Cabs Online",
+  },
+
+  {
+    id: "himachal-cab-service",
+    name: "Himachal Cab Service",
+    code: "HCS",
+    email: "himachalcabservice.co.in@gmail.com",
+    phone: "+91 70184 09957",
+    website: "www.himachalcabservice.co.in",
+    issuedBy: "Himachal Cab Service",
+    thankYouMessage:
+      "Thank You For Choosing Himachal Cab Service",
   },
 
   {
