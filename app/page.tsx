@@ -266,8 +266,7 @@ export default function DashboardPage() {
               </h2>
 
               <p className="mt-1 text-sm text-gray-500">
-                Export all bookings to a portable file,
-                or restore them on another device. Create Vendor Booking Request 
+                Export & restore bookings on another device. Create Vendor Booking pdfs on the go.
               </p>
             </div>
 

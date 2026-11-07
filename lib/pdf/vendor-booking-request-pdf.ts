@@ -24,7 +24,6 @@ import {
   PdfFirm,
   PdfTableRow,
   setBodyFont,
-  setBoldFont,
 } from "@/lib/pdf/pdf-engine";
 
 /*
@@ -71,14 +70,12 @@ function safeCount(value: number): string {
 
 function drawRequirementsBox(
   doc: jsPDF,
-  title: string,
   text: string,
   startY: number
 ): number {
   const x = PDF_PAGE.margin.left;
   const width = PDF_PAGE.contentWidth;
   const padding = 5;
-  const titleHeight = 8;
   const lineHeight = 4.2;
 
   setBodyFont(doc, 9);
@@ -90,12 +87,11 @@ function drawRequirementsBox(
 
   let index = 0;
   let currentY = startY;
-  let continued = false;
 
   while (index < lines.length) {
     const availableBodyHeight =
       getContentBottomY() -
-      (currentY + titleHeight + padding);
+      (currentY + padding * 2);
 
     const fit = Math.floor(
       availableBodyHeight / lineHeight
@@ -113,7 +109,7 @@ function drawRequirementsBox(
     );
 
     const boxHeight =
-      titleHeight + chunk.length * lineHeight + padding;
+      chunk.length * lineHeight + padding * 2;
 
     doc.setFillColor(...PDF_COLORS.lightBackground);
     doc.setDrawColor(...PDF_COLORS.border);
@@ -129,20 +125,12 @@ function drawRequirementsBox(
       "FD"
     );
 
-    setBoldFont(doc, 8.5);
-
-    doc.text(
-      continued ? `${title} (continued)` : title,
-      x + padding,
-      currentY + 6
-    );
-
     setBodyFont(doc, 9);
 
     doc.text(
       chunk,
       x + padding,
-      currentY + titleHeight + 1,
+      currentY + padding + 1,
       {
         lineHeightFactor: 1.32,
       }
@@ -150,7 +138,6 @@ function drawRequirementsBox(
 
     index += chunk.length;
     currentY += boxHeight;
-    continued = true;
 
     if (index < lines.length) {
       doc.addPage();
@@ -178,6 +165,24 @@ export async function exportVendorBookingRequestPdf(
 
   const generatedOn = new Date().toLocaleDateString("en-CA");
 
+  const propertyName = request.propertyName.trim();
+  const destination = request.destination.trim();
+  const guestName = request.guestName.trim() || "Guest";
+
+  const hotelLabel = propertyName
+    ? /^hotel\b/i.test(propertyName)
+      ? propertyName
+      : `Hotel ${propertyName}`
+    : "Hotel";
+
+  const bookingLabel = [
+    hotelLabel,
+    destination,
+    "Booking Request",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const {
     doc,
     startY,
@@ -189,9 +194,7 @@ export async function exportVendorBookingRequestPdf(
 
   doc.setProperties({
     title: "Hotel Booking Request",
-    subject: `Hotel Booking Request - ${safeText(
-      request.propertyName
-    )}`,
+    subject: bookingLabel,
     author: firm.name || "Uranote",
     creator: "Uranote Docs Generator",
   });
@@ -408,7 +411,6 @@ export async function exportVendorBookingRequestPdf(
 
   currentY = drawRequirementsBox(
     doc,
-    "Requirements",
     request.specialRequirements.trim() || "None",
     currentY
   );
@@ -532,13 +534,8 @@ export async function exportVendorBookingRequestPdf(
    * -------------------------------------------------------
    */
 
-  const guestName =
-    request.guestName.trim() ||
-    request.propertyName.trim() ||
-    "Guest";
-
   finalizePdf(doc, {
-    fileName: `Hotel Booking Request - ${guestName}`,
+    fileName: `${bookingLabel} - ${guestName}`,
     title: "Hotel Booking Request",
     firm: pdfFirm,
     showFooter: true,

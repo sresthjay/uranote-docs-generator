@@ -12,7 +12,7 @@ export default function VendorBookingRequestButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
+        className="inline-flex w-fit self-start items-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
       >
         Vendor Booking Request
       </button>
